@@ -13,8 +13,8 @@ const config: Config = {
                 foreground: "var(--foreground)",
             },
             fontFamily: {
-                sans: ['Surgena', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
-                surgena: ['Surgena', 'sans-serif'],
+                sans: ['Varien', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
+                varien: ['Varien', 'sans-serif'],
             },
             animation: {
                 'fade-in': 'fadeIn 0.6s ease-out',

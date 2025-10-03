@@ -33,7 +33,7 @@ export function Button({
       className={`relative px-6 py-3 rounded-xl font-medium overflow-hidden ${className}`}
       style={{
         background: gradients[variant],
-        fontFamily: 'Surgena, sans-serif',
+        fontFamily: 'Varien, sans-serif',
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}

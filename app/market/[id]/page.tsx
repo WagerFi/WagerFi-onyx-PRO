@@ -22,7 +22,7 @@ export default function MarketPage() {
   const { orderBook, loading: orderBookLoading } = useOrderBook(
     market?.tokens?.[0]?.token_id || null
   );
-  const { walletAddress, connected, connect } = useWallet();
+  const { walletAddress, connected, connecting, connect, disconnect } = useWallet();
 
   const [selectedOutcome, setSelectedOutcome] = useState(0);
   const [isNavHovered, setIsNavHovered] = useState(false);
@@ -88,9 +88,9 @@ export default function MarketPage() {
         }}
       />
 
-      {/* Navbar */}
+      {/* Navbar - Same as Trade Page */}
       <motion.nav
-        className="relative z-50 p-6"
+        className="relative z-50 p-4 md:p-6"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -98,11 +98,11 @@ export default function MarketPage() {
         <div className="flex items-center justify-between max-w-[1800px] mx-auto">
           <Link href="/trade">
             <motion.div 
-              className="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer"
+              className="relative inline-flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl cursor-pointer"
               style={{
                 background: 'rgba(30, 30, 30, 1)',
                 backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)'
               }}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -113,9 +113,7 @@ export default function MarketPage() {
               }}
               onMouseEnter={() => setIsNavHovered(true)}
               onMouseLeave={() => setIsNavHovered(false)}
-              whileHover={{ scale: 1.02 }}
             >
-              {/* Iridescent hover border */}
               <motion.div
                 className="absolute pointer-events-none"
                 style={{
@@ -132,23 +130,24 @@ export default function MarketPage() {
                 transition={{ duration: 0.2 }}
               />
 
-              <span className="relative z-10 text-xl tracking-tight select-none" style={{ fontFamily: 'Surgena, sans-serif' }}>
+              <span className="relative z-10 text-sm md:text-base tracking-tight select-none uppercase flex items-center gap-1 md:gap-1.5" style={{ fontFamily: 'Varien, sans-serif' }}>
+                <span className="font-light text-white">WAGERFI</span>
+                <span className="w-0.5 h-3 md:h-4 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
                   className="font-bold"
                   style={{
                     background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #d4d4d4 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
+                    backgroundClip: 'text',
+                    fontFamily: 'Varien Outline, sans-serif'
                   }}
                 >
-                  onyx
+                  ONYX
                 </span>
-                <span className="font-light text-white">.market</span>
               </span>
               <span 
-                className="relative z-10 bg-white text-[#2a2a2a] text-sm font-extrabold px-2 py-0.5 rounded-md"
-                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                className="relative z-10 bg-white text-[#2a2a2a] text-[10px] md:text-xs font-extrabold px-1 md:px-1.5 py-0.5 rounded"
               >
                 PRO
               </span>
@@ -157,28 +156,30 @@ export default function MarketPage() {
 
           {/* Wallet Connection */}
           <motion.button
-            onClick={connect}
-            disabled={connected}
+            onClick={() => connected ? disconnect() : connect()}
+            disabled={connecting}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"
+            className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-medium flex items-center gap-1 md:gap-2"
             style={{
               background: connected 
                 ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.2), rgba(58, 134, 255, 0.2))'
                 : 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
               backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               color: 'white',
             }}
           >
-            {connected ? (
-              <>
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-              </>
-            ) : (
-              'Connect MetaMask'
+            {connected && (
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             )}
+            <span className="hidden sm:inline">
+              {connecting ? 'Connecting...' : connected ? `${walletAddress?.slice(0, 6)}...${walletAddress?.slice(-4)}` : 'Connect Wallet'}
+            </span>
+            <span className="sm:hidden">
+              {connecting ? 'Connecting...' : connected ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` : 'Connect'}
+            </span>
           </motion.button>
         </div>
       </motion.nav>
@@ -218,8 +219,7 @@ export default function MarketPage() {
                   <span className="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase"
                     style={{
                       background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      fontFamily: 'JetBrains Mono, monospace'
+                      color: 'rgba(255, 255, 255, 0.6)'
                     }}
                   >
                     {market.category}
@@ -228,7 +228,7 @@ export default function MarketPage() {
               )}
 
               <h1 className="text-3xl font-bold text-white mb-6 leading-tight" 
-                style={{ fontFamily: 'Surgena, sans-serif' }}
+                style={{ fontFamily: 'Varien, sans-serif' }}
               >
                 {market.question}
               </h1>
@@ -271,8 +271,7 @@ export default function MarketPage() {
                             : 'linear-gradient(135deg, #ff006e, #fb5607)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          fontFamily: 'JetBrains Mono, monospace'
+                          backgroundClip: 'text'
                         }}
                       >
                         {percentage}%
@@ -286,15 +285,15 @@ export default function MarketPage() {
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-800">
                 <div>
                   <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">24h Volume</div>
-                  <div className="text-xl text-white font-bold font-mono">{formatVolume(volume24h)}</div>
+                  <div className="text-xl text-white font-bold">{formatVolume(volume24h)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Total Volume</div>
-                  <div className="text-xl text-white font-bold font-mono">{formatVolume(totalVolume)}</div>
+                  <div className="text-xl text-white font-bold">{formatVolume(totalVolume)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Liquidity</div>
-                  <div className="text-xl text-emerald-400 font-bold font-mono">{formatVolume(liquidity)}</div>
+                  <div className="text-xl text-emerald-400 font-bold">{formatVolume(liquidity)}</div>
                 </div>
               </div>
 
@@ -303,7 +302,7 @@ export default function MarketPage() {
                 {market.end_date_iso && (
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Market Closes</div>
-                    <div className="text-sm text-white font-mono">
+                    <div className="text-sm text-white">
                       {new Date(market.end_date_iso).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -335,7 +334,7 @@ export default function MarketPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Surgena, sans-serif' }}>
+              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
                 Order Book
               </h2>
               <OrderBook orderBook={orderBook} loading={orderBookLoading} />
@@ -355,7 +354,7 @@ export default function MarketPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Surgena, sans-serif' }}>
+              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
                 Place Trade
               </h2>
               <TradePanel
