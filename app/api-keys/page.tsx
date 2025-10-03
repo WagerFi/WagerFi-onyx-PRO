@@ -79,7 +79,7 @@ export default function ApiKeysPage() {
             border: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
-          <h1 className="text-3xl font-bold text-white mb-6" style={{ fontFamily: 'Varien, sans-serif' }}>
+          <h1 className="text-3xl font-bold text-white mb-6" style={{ fontFamily: 'Surgena, sans-serif' }}>
             Polymarket API Keys Setup
           </h1>
 

@@ -2,50 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Varien Font Family */
-@font-face {
-    font-family: 'Varien';
-    src: url('/fonts/varien/WOFF/Varien.woff2') format('woff2'),
-        url('/fonts/varien/WOFF/Varien.woff') format('woff'),
-        url('/fonts/varien/TTF/Varien.ttf') format('truetype');
-    font-style: normal;
-    font-weight: 400;
-    text-rendering: optimizeLegibility;
-}
-
-@font-face {
-    font-family: 'Varien';
-    src: url('/fonts/varien/WOFF/Varien-Italic.woff2') format('woff2'),
-        url('/fonts/varien/WOFF/Varien-Italic.woff') format('woff'),
-        url('/fonts/varien/TTF/Varien-Italic.ttf') format('truetype');
-    font-style: italic;
-    font-weight: 400;
-    text-rendering: optimizeLegibility;
-}
-
-/* Varien Outline Font Family */
-@font-face {
-    font-family: 'Varien Outline';
-    src: url('/fonts/varien/WOFF/Varien Outline.woff2') format('woff2'),
-        url('/fonts/varien/WOFF/Varien Outline.woff') format('woff'),
-        url('/fonts/varien/TTF/Varien Outline.ttf') format('truetype');
-    font-style: normal;
-    font-weight: 400;
-    text-rendering: optimizeLegibility;
-}
-
-@font-face {
-    font-family: 'Varien Outline';
-    src: url('/fonts/varien/WOFF/Varien-Italic Outline.woff2') format('woff2'),
-        url('/fonts/varien/WOFF/Varien-Italic Outline.woff') format('woff'),
-        url('/fonts/varien/TTF/Varien-Italic Outline.ttf') format('truetype');
-    font-style: italic;
-    font-weight: 400;
-    text-rendering: optimizeLegibility;
-}
-
 /* JetBrains Mono Font */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+/* Surgena Font Family */
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-Light.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-Light.otf') format('opentype');
+    font-style: normal;
+    font-weight: 300;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-LightItalic.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-LightItalic.otf') format('opentype');
+    font-style: italic;
+    font-weight: 300;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-Regular.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-Regular.otf') format('opentype');
+    font-style: normal;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-Italic.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-Italic.otf') format('opentype');
+    font-style: italic;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-Medium.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-Medium.otf') format('opentype');
+    font-style: normal;
+    font-weight: 500;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-MediumItalic.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-MediumItalic.otf') format('opentype');
+    font-style: italic;
+    font-weight: 500;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-SemiBold.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-SemiBold.otf') format('opentype');
+    font-style: normal;
+    font-weight: 600;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-SemiBoldItalic.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-SemiBoldItalic.otf') format('opentype');
+    font-style: italic;
+    font-weight: 600;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-Bold.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-Bold.otf') format('opentype');
+    font-style: normal;
+    font-weight: 700;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+    font-family: 'Surgena';
+    src: url('/fonts/surgena/Web-PS/Surgena-BoldItalic.woff2') format('woff2'),
+        url('/fonts/surgena/Web-PS/Surgena-BoldItalic.otf') format('opentype');
+    font-style: italic;
+    font-weight: 700;
+    text-rendering: optimizeLegibility;
+}
 
 * {
     border: 0;
@@ -76,7 +125,7 @@
 
 body {
     color: hsl(0, 0%, 100%);
-    font-family: 'Varien', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    font-family: 'JetBrains Mono', 'Surgena', monospace, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
         sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -211,7 +260,7 @@ body {
 }
 
 .card__title {
-    font-family: 'Varien', sans-serif;
+    font-family: 'Surgena', sans-serif;
     width: 75%;
 }
 

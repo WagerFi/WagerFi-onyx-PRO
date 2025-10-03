@@ -34,7 +34,7 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
 
   // Fetch tokens from background worker via API proxy
   const fetchTokens = async () => {
-    setIsLoading(true);
+      setIsLoading(true);
     setError(null);
     
     try {
@@ -128,16 +128,16 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
+              <input
+                type="text"
               placeholder="Search tokens..."
-              value={searchQuery}
+                value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-sm"
               style={{ fontFamily: 'Varien, sans-serif' }}
             />
-          </div>
-          <button
+                </div>
+          <button 
             onClick={fetchTokens}
             className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
             title="Refresh tokens"
@@ -146,25 +146,25 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
           </button>
         </div>
       </div>
-          
+
       {/* Tokens List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {isLoading ? (
           <div className="text-center py-12">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-gray-500">Loading tokens...</p>
-          </div>
+                </div>
         ) : error ? (
           <div className="text-center py-12">
             <DollarSign className="w-12 h-12 text-red-300 mx-auto mb-3" />
             <p className="text-red-500 font-medium">{error}</p>
-            <button
+              <button 
               onClick={fetchTokens}
               className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-            >
+              >
               Try Again
-            </button>
-          </div>
+              </button>
+            </div>
         ) : filteredTokens.length === 0 ? (
           <div className="text-center py-12">
             <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />

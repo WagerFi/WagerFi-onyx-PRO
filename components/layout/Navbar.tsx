@@ -64,7 +64,7 @@ export function Navbar({ walletConnected, username, onConnectWallet }: NavbarPro
 
             <span
               className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2"
-              style={{ fontFamily: 'Varien, sans-serif' }}
+              style={{ fontFamily: 'Surgena, sans-serif' }}
             >
               <span className="font-light text-white">WAGERFI</span>
               <span className="w-0.5 h-6 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
@@ -76,7 +76,6 @@ export function Navbar({ walletConnected, username, onConnectWallet }: NavbarPro
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  fontFamily: 'Varien Outline, sans-serif'
                 }}
               >
                 ONYX

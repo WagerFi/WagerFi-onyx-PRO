@@ -335,7 +335,8 @@ export default function Home() {
               style={{
                 background: 'rgba(30, 30, 30, 1)',
                 backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)'
+                WebkitBackdropFilter: 'blur(12px)',
+                fontFamily: 'JetBrains Mono, monospace'
               }}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -366,7 +367,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               />
 
-              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2" style={{ fontFamily: 'Varien, sans-serif' }}>
+              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2" style={{ fontFamily: 'Surgena, sans-serif' }}>
                 <span className="font-light text-white">WAGERFI</span>
                 <span className="w-0.5 h-6 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
@@ -375,8 +376,7 @@ export default function Home() {
                     background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #d4d4d4 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontFamily: 'Varien Outline, sans-serif'
+                    backgroundClip: 'text'
                   }}
                 >
                   ONYX
@@ -384,6 +384,9 @@ export default function Home() {
               </span>
               <span 
                 className="relative z-10 bg-white text-[#2a2a2a] text-sm font-extrabold px-2 py-0.5 rounded-md"
+                style={{ 
+                  fontFamily: 'JetBrains Mono, monospace'
+                }}
               >
                 PRO
               </span>
@@ -408,7 +411,7 @@ export default function Home() {
               <motion.span
                 className="relative inline-block uppercase flex items-center gap-3"
                 style={{ 
-                  fontFamily: 'Varien, sans-serif'
+                  fontFamily: 'Surgena, sans-serif'
                 }}
                 initial={{ opacity: 0, y: 100 }}
                 animate={mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 100 }}
@@ -425,8 +428,7 @@ export default function Home() {
                     background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #d4d4d4 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontFamily: 'Varien Outline, sans-serif'
+                    backgroundClip: 'text'
                   }}
                 >
                   ONYX
@@ -439,8 +441,7 @@ export default function Home() {
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
                     backgroundSize: '200% 100%',
-                    filter: 'brightness(1.5)',
-                    fontFamily: 'Varien Outline, sans-serif'
+                    filter: 'brightness(1.5)'
                   }}
                   animate={{
                     backgroundPosition: ['200% 0', '-200% 0']
@@ -460,6 +461,7 @@ export default function Home() {
               <motion.span
                 className="bg-white text-[#2a2a2a] text-3xl font-black px-3 py-1 rounded-lg -mt-2"
                 style={{ 
+                  fontFamily: 'JetBrains Mono, monospace',
                   fontWeight: 900
                 }}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -522,7 +524,8 @@ export default function Home() {
                   borderRadius: '12px',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
-                  border: '2px solid transparent'
+                  border: '2px solid transparent',
+                  fontFamily: 'JetBrains Mono, monospace'
                 }}
                 onClick={handleTradeClick}
                 whileHover={{ scale: 1.05 }}
@@ -599,6 +602,7 @@ export default function Home() {
               className="relative px-5 py-1.5 text-white font-light text-sm tracking-wide cursor-pointer select-none"
               style={{ 
                 borderRadius: '10px',
+                fontFamily: 'JetBrains Mono, monospace',
                 background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',

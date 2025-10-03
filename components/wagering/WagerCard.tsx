@@ -174,19 +174,19 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                   wager.status === 'active' ? 'bg-blue-500/20 text-blue-700 border border-blue-500/30' :
                   wager.status === 'resolved' ? 'bg-green-500/20 text-green-700 border border-green-500/30' :
                   'bg-gray-400/20 text-gray-700 border border-gray-400/30'
-                }`} >
+                }`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                   {wager.status}
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-[9px] text-gray-600 uppercase tracking-wide" >
+                <p className="text-[9px] text-gray-600 uppercase tracking-wide" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                   {timeLeft}
                 </p>
               </div>
             </div>
 
             {/* Header */}
-            <h3 className="text-black font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Varien, sans-serif' }}>
+            <h3 className="text-black font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Surgena, sans-serif' }}>
               {wager.token_symbol.toUpperCase()}
               <span className={wager.prediction_type === 'above' ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
                 {wager.prediction_type === 'above' ? ' ↑ ' : ' ↓ '}
@@ -229,11 +229,11 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                   }}
                 >
                   <div className="text-[9px] text-gray-600 mb-0.5 font-medium uppercase tracking-wide"
->
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                     {item.label}
                   </div>
                   <div className={`text-base font-bold ${item.color}`}
->
+                    style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                     {item.value}
                   </div>
                 </div>
@@ -244,13 +244,13 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
             <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-300/50">
               <div className="flex-1">
                 <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Amount</div>
-                <div className="text-xs text-black font-bold" >
+                <div className="text-xs text-black font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                   {wager.amount} SOL
                 </div>
               </div>
               <div className="flex-1">
                 <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Win</div>
-                <div className="text-xs text-green-600 font-bold" >
+                <div className="text-xs text-green-600 font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                   {(wager.amount * 1.95).toFixed(2)} SOL
                 </div>
               </div>
@@ -277,6 +277,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                   style={{
                     background: 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))',
                     border: '1.5px solid rgba(6, 255, 165, 0.3)',
+                    fontFamily: 'JetBrains Mono, monospace',
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -322,6 +323,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                   style={{
                     background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
                     border: '1.5px solid rgba(139, 92, 246, 0.3)',
+                    fontFamily: 'JetBrains Mono, monospace',
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -423,27 +425,27 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                 wager.status === 'live' ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' :
                 wager.status === 'resolved' ? 'bg-green-500/20 text-green-700 border border-green-500/30' :
                 'bg-gray-400/20 text-gray-700 border border-gray-400/30'
-              }`} >
+              }`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {wager.status}
               </span>
               <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase bg-purple-500/20 text-purple-700 border border-purple-500/30"
->
+                style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {wager.sport} • {wager.league}
               </span>
             </div>
             <div className="text-right">
-              <p className="text-[9px] text-gray-600 uppercase tracking-wide" >
+              <p className="text-[9px] text-gray-600 uppercase tracking-wide" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {timeLeft}
               </p>
             </div>
           </div>
 
           {/* Header */}
-          <h3 className="text-black font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Varien, sans-serif' }}>
+          <h3 className="text-black font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Surgena, sans-serif' }}>
             {wager.team1} vs {wager.team2}
           </h3>
 
-          <p className="text-xs text-gray-700 mb-3" >
+          <p className="text-xs text-gray-700 mb-3" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
             Prediction: <span className="text-black font-bold">{wager.prediction}</span>
           </p>
 
@@ -451,13 +453,13 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
           <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-300/50">
             <div className="flex-1">
               <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Amount</div>
-              <div className="text-xs text-black font-bold" >
+              <div className="text-xs text-black font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {wager.amount} SOL
               </div>
             </div>
             <div className="flex-1">
               <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Game</div>
-              <div className="text-xs text-black font-bold" >
+              <div className="text-xs text-black font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                 {new Date(wager.game_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
             </div>
@@ -483,7 +485,8 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                 }}
                 style={{
                   background: 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))',
-                  border: '1.5px solid rgba(6, 255, 165, 0.3)'
+                  border: '1.5px solid rgba(6, 255, 165, 0.3)',
+                  fontFamily: 'JetBrains Mono, monospace',
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -528,7 +531,8 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                 }}
                 style={{
                   background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
-                  border: '1.5px solid rgba(139, 92, 246, 0.3)'
+                  border: '1.5px solid rgba(139, 92, 246, 0.3)',
+                  fontFamily: 'JetBrains Mono, monospace',
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

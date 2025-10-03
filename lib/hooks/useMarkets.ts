@@ -11,11 +11,8 @@ export function useMarkets() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchMarkets = useCallback(async (isInitialLoad = false) => {
-        // Only show loading on initial load, not on refresh
-        if (isInitialLoad) {
-            setLoading(true);
-        }
+    const fetchMarkets = useCallback(async () => {
+        setLoading(true);
         setError(null);
 
         try {
@@ -89,11 +86,10 @@ export function useMarkets() {
     }, []);
 
     useEffect(() => {
-        // Initial load with loading state
-        fetchMarkets(true);
+        fetchMarkets();
 
-        // Refresh markets every 30 seconds (without loading state)
-        const interval = setInterval(() => fetchMarkets(false), 30000);
+        // Refresh markets every 30 seconds
+        const interval = setInterval(fetchMarkets, 30000);
 
         return () => clearInterval(interval);
     }, [fetchMarkets]);

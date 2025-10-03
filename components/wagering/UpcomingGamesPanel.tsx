@@ -66,12 +66,12 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
     <div className="flex flex-col h-full" style={{ fontFamily: 'Varien, sans-serif' }}>
       {/* Search Bar */}
       <div className="p-4 border-b border-gray-200">
-        <div className="relative">
+          <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
+            <input
+              type="text"
             placeholder="Search teams..."
-            value={searchQuery}
+              value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-sm"
             style={{ fontFamily: 'Varien, sans-serif' }}
@@ -81,7 +81,7 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
 
       {/* Status Tabs */}
       <div className="flex gap-2 p-4 border-b border-gray-200">
-        <button
+            <button
           onClick={() => setActiveTab('upcoming')}
           className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
             activeTab === 'upcoming'
@@ -91,8 +91,8 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
           style={{ fontFamily: 'Varien, sans-serif' }}
         >
           Upcoming ({Object.values(upcomingGames).flat().length})
-        </button>
-        <button
+            </button>
+            <button
           onClick={() => setActiveTab('live')}
           className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
             activeTab === 'live'
@@ -102,20 +102,20 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
           style={{ fontFamily: 'Varien, sans-serif' }}
         >
           Live ({Object.values(liveGames).flat().length})
-        </button>
-        <button
+                              </button>
+                              <button
           onClick={() => refreshGames()}
           className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
           title="Refresh games"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
+                              </button>
+                            </div>
+                            
       {/* Sport Filters */}
       <div className="flex gap-2 p-4 border-b border-gray-200 overflow-x-auto">
         {availableSports.map((sport) => (
-          <button
+                                <button
             key={sport}
             onClick={() => setSelectedSport(sport)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
@@ -126,9 +126,9 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
             style={{ fontFamily: 'Varien, sans-serif' }}
           >
             {sport === 'all' ? 'All Sports' : sport.charAt(0).toUpperCase() + sport.slice(1).replace('-', ' ')}
-          </button>
+                                </button>
         ))}
-      </div>
+                                  </div>
 
       {/* Games List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -136,17 +136,17 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
           <div className="text-center py-12">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-gray-500">Loading games...</p>
-          </div>
+                                  </div>
         ) : error ? (
           <div className="text-center py-12">
             <Trophy className="w-12 h-12 text-red-300 mx-auto mb-3" />
             <p className="text-red-500 font-medium">{error}</p>
-            <button
+                                    <button
               onClick={() => refreshGames()}
               className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
             >
               Try Again
-            </button>
+                                  </button>
           </div>
         ) : filteredGames.length === 0 ? (
           <div className="text-center py-12">
@@ -164,22 +164,22 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
             >
               {/* Game Header */}
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                   {typeof game.league === 'object' && game.league?.logo && (
                     <img src={game.league.logo} alt="" className="w-5 h-5" />
                   )}
                   <span className="text-xs font-semibold text-gray-500 uppercase">
                     {typeof game.league === 'object' ? game.league?.name || 'Unknown League' : game.league}
-                  </span>
-                </div>
+                                        </span>
+                                    </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Calendar className="w-3 h-3" />
                   <span>{game.date}</span>
                   <Clock className="w-3 h-3 ml-1" />
                   <span>{game.time}</span>
-                </div>
-              </div>
-
+                                    </div>
+                          </div>
+                          
               {/* Teams */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-1">
@@ -187,52 +187,52 @@ export function UpcomingGamesPanel({ onCreateWager, onWagerCreated }: UpcomingGa
                     <img src={game.homeTeam.logo} alt="" className="w-8 h-8 rounded-full object-contain" />
                   )}
                   <span className="font-medium text-gray-800">{game.homeTeam?.name || 'Home Team'}</span>
-                </div>
+                              </div>
                 <span className="text-gray-400 font-bold mx-4">VS</span>
                 <div className="flex items-center gap-2 flex-1 justify-end">
                   <span className="font-medium text-gray-800">{game.awayTeam?.name || 'Away Team'}</span>
                   {game.awayTeam?.logo && (
                     <img src={game.awayTeam.logo} alt="" className="w-8 h-8 rounded-full object-contain" />
                   )}
-                </div>
-              </div>
-
+                                </div>
+                                </div>
+                                
               {/* Live Score */}
               {activeTab === 'live' && game.goals && (
                 <div className="flex items-center justify-center mt-3 py-2 bg-red-50 rounded-lg">
                   <span className="text-red-600 font-bold text-lg">
                     {game.goals.home} - {game.goals.away}
-                  </span>
+                              </span>
                   {game.status && typeof game.status === 'object' && game.status.elapsed && (
                     <span className="ml-2 text-xs text-red-500">{game.status.elapsed}'</span>
                   )}
-                </div>
-              )}
+                                </div>
+                              )}
 
               {/* Create Wager Button */}
-              <button
+                              <button
                 className="w-full mt-3 py-2 px-4 rounded-lg text-sm font-bold text-white transition-all hover:opacity-90"
-                style={{
+            style={{
                   background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
+                            onClick={(e) => {
+                              e.stopPropagation();
                   onCreateWager?.(game, game.sport || 'unknown');
                 }}
               >
                 Create Wager
-              </button>
-            </div>
+                          </button>
+                      </div>
           ))
-        )}
-      </div>
-
+                    )}
+                  </div>
+                  
       {/* Info Footer */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
         <p className="text-xs text-center text-gray-500">
           Click on any game to create a wager
-        </p>
-      </div>
+                </p>
+              </div>
     </div>
   );
 }
