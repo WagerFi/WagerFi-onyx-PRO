@@ -89,7 +89,7 @@ export function CountdownTimer({ expiresAt, className = '' }: CountdownTimerProp
   };
 
   return (
-    <span className={`text-sm font-bold ${getColorClass()} ${className}`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+    <span className={`text-sm font-bold ${getColorClass()} ${className}`}>
       {getDisplayText()}
     </span>
   );

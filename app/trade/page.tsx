@@ -16,6 +16,7 @@ import { UpcomingGamesPanelModal } from '@/components/wagering/UpcomingGamesPane
 import { TopCryptoTokensPanelModal } from '@/components/wagering/TopCryptoTokensPanelModal';
 import { SportsWagerModal } from '@/components/wagering/SportsWagerModal';
 import { CryptoWagerModal } from '@/components/wagering/CryptoWagerModal';
+import { CompactUserStats } from '@/components/CompactUserStats';
 import { supabase } from '@/lib/supabase/client';
 import type { Market } from '@/lib/polymarket/types';
 import type { CryptoWager, SportsWager } from '@/lib/supabase/types';
@@ -344,41 +345,43 @@ export default function TradePage() {
             </motion.div>
           </Link>
 
-          {/* Wallet Connection */}
-          <motion.button
-            onClick={() => {
-              if (connected) {
-                console.log('🔌 Disconnect button clicked!');
-                disconnect();
-              } else {
-                console.log('🔘 Connect button clicked!', { connecting, connected });
-                connect();
-              }
-            }}
-            disabled={connecting}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-medium flex items-center gap-1 md:gap-2"
-            style={{
-              background: connected 
-                ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.2), rgba(58, 134, 255, 0.2))'
-                : 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: 'white',
-            }}
-          >
-            {connected && (
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            )}
-            <span className="hidden sm:inline">
-              {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect Wallet'}
-            </span>
-            <span className="sm:hidden">
-              {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect'}
-            </span>
-          </motion.button>
+          {/* Balance Display & Wallet Connection */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <CompactUserStats />
+            
+            <motion.button
+              onClick={() => {
+                if (connected) {
+                  console.log('🔌 Disconnect button clicked!');
+                  disconnect();
+                } else {
+                  console.log('🔘 Connect button clicked!', { connecting, connected });
+                  connect();
+                }
+              }}
+              disabled={connecting}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-medium flex items-center gap-1 md:gap-2"
+              style={{
+                background: 'rgba(0, 0, 0, 0.95)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+              }}
+            >
+              {connected && (
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              )}
+              <span className="hidden sm:inline">
+                {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect Wallet'}
+              </span>
+              <span className="sm:hidden">
+                {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect'}
+              </span>
+            </motion.button>
+          </div>
         </div>
       </motion.nav>
 

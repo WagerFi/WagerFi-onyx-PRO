@@ -31,7 +31,11 @@ class GlobalWebSocketManager implements WebSocketManager {
         if (backgroundWorkerUrl.includes('localhost')) {
             this.wsUrl = backgroundWorkerUrl.replace('http://', 'ws://') + '/ws';
         } else {
-            if (window.location.protocol === 'https:') {
+            // Check if we're in a browser environment before accessing window
+            if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+                this.wsUrl = backgroundWorkerUrl.replace('https://', 'wss://') + '/ws';
+            } else if (backgroundWorkerUrl.startsWith('https://')) {
+                // Default to wss:// for https URLs when window is not available (SSR)
                 this.wsUrl = backgroundWorkerUrl.replace('https://', 'wss://') + '/ws';
             } else {
                 this.wsUrl = backgroundWorkerUrl.replace('http://', 'ws://') + '/ws';

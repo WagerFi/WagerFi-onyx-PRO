@@ -119,6 +119,7 @@ export function MiniPriceChart({
     ctx.lineTo(padding.left + chartWidth, targetY);
     ctx.stroke();
     ctx.setLineDash([]);
+    
     // Draw price line with drop shadow
     const gradient = ctx.createLinearGradient(0, 0, chartWidth, 0);
     gradient.addColorStop(0, isWinning ? '#10b981' : '#ef4444');
