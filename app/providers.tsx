@@ -27,7 +27,7 @@ export function Providers({ children }: { children: ReactNode }) {
         [data-privy-modal-content] h1,
         [data-privy-modal-content] h2,
         [data-privy-modal-content] h3 {
-          font-family: 'Surgena', 'JetBrains Mono', sans-serif !important;
+          font-family: 'Varien', 'JetBrains Mono', sans-serif !important;
           color: #ffffff !important;
         }
 

@@ -2,7 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
+import { useRouter } from 'next/navigation';
 import { MiniPriceChart } from './MiniPriceChart';
+import { CountdownTimer } from '../CountdownTimer';
 import type { CryptoWager, SportsWager } from '@/lib/supabase/types';
 import { supabase } from '@/lib/supabase/client';
 
@@ -30,7 +32,83 @@ function getTimeLeft(expiryTime: string): string {
   return 'Soon';
 }
 
+// Helper to get token logo
+function getTokenLogo(wager: CryptoWager): string {
+  // Check metadata for token snapshot
+  if (wager.metadata && typeof wager.metadata === 'object') {
+    const metadata = wager.metadata as any;
+    if (metadata.token_snapshot?.logo) {
+      return metadata.token_snapshot.logo;
+    }
+  }
+  
+  // Fallback to CoinMarketCap (you'll need the token_id in metadata)
+  const metadata = wager.metadata as any;
+  const tokenId = metadata?.token_id;
+  if (tokenId) {
+    return `https://s2.coinmarketcap.com/static/img/coins/64x64/${tokenId}.png`;
+  }
+  
+  return 'https://wagerfi-sportsapi.b-cdn.net/default-token.png';
+}
+
+// Helper to get team logo
+function getTeamLogo(wager: SportsWager, isCreator: boolean): string | null {
+  if (wager.metadata && typeof wager.metadata === 'object') {
+    const metadata = wager.metadata as any;
+    
+    // Check for team logos in snapshots
+    if (isCreator && metadata.creator_team_snapshot?.logo) {
+      return transformImageUrl(metadata.creator_team_snapshot.logo);
+    }
+    if (!isCreator && metadata.opponent_team_snapshot?.logo) {
+      return transformImageUrl(metadata.opponent_team_snapshot.logo);
+    }
+    
+    // Alternative metadata structure
+    if (metadata.teams) {
+      const logo = isCreator 
+        ? (metadata.teams.home?.logo || metadata.teams.creator?.logo)
+        : (metadata.teams.away?.logo || metadata.teams.opponent?.logo);
+      if (logo) return transformImageUrl(logo);
+    }
+    
+    // Direct fields
+    const logo = isCreator 
+      ? (metadata.creator_team_logo || metadata.home_team_logo)
+      : (metadata.opponent_team_logo || metadata.away_team_logo);
+    if (logo) return transformImageUrl(logo);
+  }
+  
+  return null;
+}
+
+// Transform image URL to use WagerFi CDN
+function transformImageUrl(url: string): string {
+  if (url && url.includes('media.api-sports.io')) {
+    return url.replace('media.api-sports.io', 'wagerfi-sportsapi.b-cdn.net');
+  }
+  return url;
+}
+
+// Get team name
+function getTeamName(wager: SportsWager, isCreator: boolean): string {
+  if (wager.metadata && typeof wager.metadata === 'object') {
+    const metadata = wager.metadata as any;
+    
+    if (isCreator && metadata.creator_team_snapshot?.name) {
+      return metadata.creator_team_snapshot.name;
+    }
+    if (!isCreator && metadata.opponent_team_snapshot?.name) {
+      return metadata.opponent_team_snapshot.name;
+    }
+  }
+  
+  return isCreator ? wager.team1 : wager.team2;
+}
+
 function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [priceHistory, setPriceHistory] = useState<Array<{ price: number; timestamp: number }>>([]);
@@ -92,13 +170,61 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
   }, [wager]);
 
   const handleClick = () => {
-    // TODO: Navigate to dedicated wager detail page when built
-    console.log('View wager details:', wager.id);
+    router.push(`/wagers/${wager.id}`);
   };
 
   if (isCryptoWager(wager)) {
     const isWinning = (wager.prediction_type === 'above' && currentPrice > wager.target_price) ||
                       (wager.prediction_type === 'below' && currentPrice < wager.target_price);
+    
+    // Determine winner info
+    let winnerAddress: string | undefined;
+    let winnerUsername: string | undefined;
+    let winnerAvatar: string | undefined;
+    
+    if (wager.status === 'resolved') {
+      // Use the actual winner from winner_position (only if accepted)
+      if (wager.acceptor_address) {
+        if (wager.winner_position === 'creator') {
+          winnerAddress = wager.creator_address;
+          winnerUsername = wager.creator_profile?.username || 
+            `${wager.creator_address?.slice(0, 4)}...${wager.creator_address?.slice(-4)}`;
+          winnerAvatar = wager.creator_profile?.profile_image_url;
+        } else if (wager.winner_position === 'acceptor') {
+          winnerAddress = wager.acceptor_address;
+          winnerUsername = wager.acceptor_profile?.username || 
+            `${wager.acceptor_address?.slice(0, 4)}...${wager.acceptor_address?.slice(-4)}`;
+          winnerAvatar = wager.acceptor_profile?.profile_image_url;
+        }
+      }
+    } else if (wager.status === 'active' && wager.acceptor_address) {
+      // Show who is currently winning (accepted wagers only)
+      winnerAddress = isWinning ? wager.creator_address : wager.acceptor_address;
+      if (isWinning) {
+        winnerUsername = wager.creator_profile?.username || 
+          `${wager.creator_address?.slice(0, 4)}...${wager.creator_address?.slice(-4)}`;
+        winnerAvatar = wager.creator_profile?.profile_image_url;
+      } else {
+        winnerUsername = wager.acceptor_profile?.username || 
+          `${wager.acceptor_address?.slice(0, 4)}...${wager.acceptor_address?.slice(-4)}`;
+        winnerAvatar = wager.acceptor_profile?.profile_image_url;
+      }
+    } else if (wager.status === 'open') {
+      // For open wagers, show creator as currently winning
+      winnerAddress = wager.creator_address;
+      winnerUsername = wager.creator_profile?.username || 
+        `${wager.creator_address?.slice(0, 4)}...${wager.creator_address?.slice(-4)}`;
+      winnerAvatar = wager.creator_profile?.profile_image_url;
+    }
+    
+    console.log('Winner info:', { 
+      status: wager.status, 
+      acceptor: wager.acceptor_address, 
+      winnerAddress, 
+      winnerUsername,
+      isWinning,
+      winner_position: wager.winner_position 
+    });
     
     return (
       <motion.div
@@ -158,95 +284,136 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
           />
 
           <div className="relative z-10">
-            {/* Category Badge */}
-            <div className="mb-2">
-              <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  fontFamily: 'JetBrains Mono, monospace'
-                }}
+            {/* Token Image & Title */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-dark-800/40 flex-shrink-0">
+                <img
+                  src={getTokenLogo(wager)}
+                  alt={wager.token_symbol}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://wagerfi-sportsapi.b-cdn.net/default-token.png';
+                  }}
+                />
+              </div>
+              <h3 
+                className="text-white font-medium text-sm line-clamp-2 leading-tight flex-1"
               >
-                CRYPTO WAGER • {wager.token_symbol}
-              </span>
+                {wager.token_symbol} {wager.prediction_type === 'above' ? 'above' : 'below'} ${wager.target_price.toLocaleString()}
+              </h3>
             </div>
-
-            {/* Question */}
-            <h3 
-              className="text-white font-medium text-sm mb-3 line-clamp-2 leading-tight" 
-              style={{ fontFamily: 'Surgena, sans-serif' }}
-            >
-              {wager.token_symbol} {wager.prediction_type === 'above' ? 'above' : 'below'} ${wager.target_price.toLocaleString()}
-            </h3>
 
             {/* Price Chart (same as WagerFi with live updates) */}
             {currentPrice > 0 && priceHistory.length > 0 && (
-              <div className="mb-3 h-20 rounded-lg overflow-hidden relative"
+              <div className="mb-4 h-20 rounded-lg overflow-visible relative"
                 style={{
                   background: 'rgba(0, 0, 0, 0.2)',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
                 <div className="relative z-10 p-1 h-full">
-                  <MiniPriceChart
-                    currentPrice={currentPrice}
-                    targetPrice={wager.target_price}
-                    predictionType={wager.prediction_type}
-                    tokenSymbol={wager.token_symbol}
-                    priceHistory={priceHistory}
-                  />
+              <MiniPriceChart
+                currentPrice={currentPrice}
+                targetPrice={wager.target_price}
+                predictionType={wager.prediction_type}
+                tokenSymbol={wager.token_symbol}
+                priceHistory={priceHistory}
+                status={wager.status}
+                winnerAddress={winnerAddress}
+                winnerUsername={winnerUsername}
+                winnerAvatar={winnerAvatar}
+              />
                 </div>
               </div>
             )}
 
-            {/* Outcomes with percentages */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {[
-                { label: wager.prediction_type === 'above' ? 'ABOVE' : 'BELOW', percentage: 50, isYes: true },
-                { label: wager.prediction_type === 'above' ? 'BELOW' : 'ABOVE', percentage: 50, isYes: false }
-              ].map((outcome, idx) => (
-                <div key={idx} 
-                  className="relative p-2 rounded-lg"
-                  style={{
-                    background: outcome.isYes 
-                      ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.08), rgba(58, 134, 255, 0.08))'
-                      : 'linear-gradient(135deg, rgba(255, 0, 110, 0.08), rgba(251, 86, 7, 0.08))',
-                    border: `1px solid ${outcome.isYes ? 'rgba(6, 255, 165, 0.2)' : 'rgba(255, 0, 110, 0.2)'}`,
-                  }}
-                >
-                  <div className="text-[9px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide">
-                    {outcome.label}
-                  </div>
-                  <div className="text-xl font-bold"
-                    style={{
-                      backgroundImage: outcome.isYes 
-                        ? 'linear-gradient(135deg, #06ffa5, #3a86ff)'
-                        : 'linear-gradient(135deg, #ff006e, #fb5607)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      fontFamily: 'JetBrains Mono, monospace'
-                    }}
-                  >
-                    {outcome.percentage}%
+            {/* Wager Info Box */}
+            <div className="mb-3 p-3 rounded-lg"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">Wager Amount</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-white">
+                      {wager.amount}
+                    </span>
+                    <img 
+                      src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" 
+                      alt="SOL" 
+                      className="w-5 h-5"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Stats Row */}
-            <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-800/50">
-              <div className="flex-1">
-                <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Wager</div>
-                <div className="text-xs text-white font-bold font-mono">{wager.amount} SOL</div>
+                <div className="text-right">
+                  <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">
+                    {wager.status === 'open' || wager.status === 'active' ? 'Expires' : 'Status'}
+                  </div>
+                  <CountdownTimer expiresAt={wager.expiry_time} />
+                </div>
               </div>
-              <div className="flex-1">
-                <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Target</div>
-                <div className="text-xs text-white font-bold font-mono">${wager.target_price.toLocaleString()}</div>
-              </div>
-              <div className="flex-1">
-                <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Expires</div>
-                <div className="text-xs text-emerald-400 font-bold font-mono">{getTimeLeft(wager.expiry_time)}</div>
+              <div className="pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wide">Potential Win</div>
+                  <div className="flex items-center gap-1.5 relative">
+                    <style jsx>{`
+                      @keyframes shine-slide {
+                        0% {
+                          background-position: 200% 0;
+                        }
+                        100% {
+                          background-position: -200% 0;
+                        }
+                      }
+                      .shine-text-base {
+                        color: rgba(255, 255, 255, 0.9);
+                      }
+                      .shine-text-overlay {
+                        background: linear-gradient(
+                          90deg,
+                          transparent 0%,
+                          rgba(255, 255, 255, 0.3) 40%,
+                          rgba(255, 255, 255, 1) 50%,
+                          rgba(255, 255, 255, 0.3) 60%,
+                          transparent 100%
+                        );
+                        background-size: 200% 100%;
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        animation: shine-slide 3s ease-in-out infinite;
+                        animation-delay: 2s;
+                      }
+                    `}</style>
+                    <div className="relative">
+                      <span className="shine-text-base text-base font-black"
+                        style={{
+                          fontFamily: 'Varien, sans-serif',
+                          fontWeight: 400
+                        }}
+                      >
+                        {(wager.amount * 2).toFixed(2)}
+                      </span>
+                      <span className="shine-text-overlay text-base font-black absolute inset-0 pointer-events-none"
+                        style={{
+                          fontFamily: 'Varien, sans-serif',
+                          fontWeight: 400
+                        }}
+                      >
+                        {(wager.amount * 2).toFixed(2)}
+                      </span>
+                    </div>
+                    <img 
+                      src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" 
+                      alt="SOL" 
+                      className="w-4 h-4"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -261,8 +428,7 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
                 background: isWinning
                   ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))'
                   : 'linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(251, 86, 7, 0.15))',
-                border: `1.5px solid ${isWinning ? 'rgba(6, 255, 165, 0.3)' : 'rgba(255, 0, 110, 0.3)'}`,
-                fontFamily: 'JetBrains Mono, monospace',
+                border: `1.5px solid ${isWinning ? 'rgba(6, 255, 165, 0.3)' : 'rgba(255, 0, 110, 0.3)'}`
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -350,21 +516,72 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
             <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase"
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontFamily: 'JetBrains Mono, monospace'
+                color: 'rgba(255, 255, 255, 0.5)'
               }}
             >
               {wager.sport} • {wager.league}
             </span>
           </div>
 
-          {/* Question */}
-          <h3 
-            className="text-white font-medium text-sm mb-3 line-clamp-2 leading-tight" 
-            style={{ fontFamily: 'Surgena, sans-serif' }}
-          >
-            {wager.team1} vs {wager.team2}
-          </h3>
+          {/* Team Logos & Matchup */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex -space-x-2">
+              {/* Team 1 Logo */}
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-800/80 border-2 border-[#1e1e1e] flex items-center justify-center">
+                {getTeamLogo(wager, true) ? (
+                  <img
+                    src={getTeamLogo(wager, true) || ''}
+                    alt={getTeamName(wager, true)}
+                    className="w-7 h-7 object-contain"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      // If CDN failed, try original URL
+                      if (img.src.includes('wagerfi-sportsapi.b-cdn.net')) {
+                        const originalUrl = img.src.replace('wagerfi-sportsapi.b-cdn.net', 'media.api-sports.io');
+                        img.src = originalUrl;
+                      } else {
+                        img.style.display = 'none';
+                        img.parentElement!.innerHTML = `<div class="w-7 h-7 flex items-center justify-center text-blue-400 text-xs font-bold">${getTeamName(wager, true).charAt(0)}</div>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-7 h-7 flex items-center justify-center text-blue-400 text-xs font-bold">
+                    {getTeamName(wager, true).charAt(0)}
+                  </div>
+                )}
+              </div>
+              {/* Team 2 Logo */}
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-800/80 border-2 border-[#1e1e1e] flex items-center justify-center">
+                {getTeamLogo(wager, false) ? (
+                  <img
+                    src={getTeamLogo(wager, false) || ''}
+                    alt={getTeamName(wager, false)}
+                    className="w-7 h-7 object-contain"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (img.src.includes('wagerfi-sportsapi.b-cdn.net')) {
+                        const originalUrl = img.src.replace('wagerfi-sportsapi.b-cdn.net', 'media.api-sports.io');
+                        img.src = originalUrl;
+                      } else {
+                        img.style.display = 'none';
+                        img.parentElement!.innerHTML = `<div class="w-7 h-7 flex items-center justify-center text-red-400 text-xs font-bold">${getTeamName(wager, false).charAt(0)}</div>`;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-7 h-7 flex items-center justify-center text-red-400 text-xs font-bold">
+                    {getTeamName(wager, false).charAt(0)}
+                  </div>
+                )}
+              </div>
+            </div>
+            <h3 
+              className="text-white font-medium text-sm line-clamp-2 leading-tight flex-1"
+            >
+              {wager.team1} vs {wager.team2}
+            </h3>
+          </div>
 
           {/* Prediction Display */}
           <div className="mb-3 p-2 rounded-lg"
@@ -376,7 +593,7 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
             <div className="text-[9px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide">
               Prediction
             </div>
-            <div className="text-sm font-bold text-white" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+            <div className="text-sm font-bold text-white">
               {wager.prediction}
             </div>
           </div>
@@ -385,17 +602,24 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
           <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-800/50">
             <div className="flex-1">
               <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Wager</div>
-              <div className="text-xs text-white font-bold font-mono">{wager.amount} SOL</div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-white font-bold">{wager.amount}</span>
+                <img 
+                  src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" 
+                  alt="SOL" 
+                  className="w-3 h-3"
+                />
+              </div>
             </div>
             <div className="flex-1">
               <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Game</div>
-              <div className="text-xs text-white font-bold font-mono">
+              <div className="text-xs text-white font-bold">
                 {new Date(wager.game_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
             </div>
             <div className="flex-1">
               <div className="text-[9px] text-gray-500 mb-0.5 uppercase tracking-wide">Expires</div>
-              <div className="text-xs text-emerald-400 font-bold font-mono">{getTimeLeft(wager.expiry_time)}</div>
+              <div className="text-xs text-emerald-400 font-bold">{getTimeLeft(wager.expiry_time)}</div>
             </div>
           </div>
 
@@ -408,8 +632,7 @@ function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
             }}
             style={{
               background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
-              border: '1.5px solid rgba(139, 92, 246, 0.3)',
-              fontFamily: 'JetBrains Mono, monospace',
+              border: '1.5px solid rgba(139, 92, 246, 0.3)'
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -451,4 +674,5 @@ export const WagerMarketCard = memo(WagerMarketCardComponent, (prevProps, nextPr
   // If we got here, props are essentially the same - skip render
   return true;
 });
+
 

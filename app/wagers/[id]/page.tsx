@@ -4,44 +4,66 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useMarket } from '@/lib/hooks/useMarkets';
-import { useOrderBook } from '@/lib/hooks/useOrderBook';
+import { supabase } from '@/lib/supabase/client';
 import { useWallet } from '@/lib/hooks/useWallet';
-import { OrderBook } from '@/components/OrderBook';
-import { TradePanel } from '@/components/TradePanel';
-import type { Market } from '@/lib/polymarket/types';
+import type { CryptoWager, SportsWager } from '@/lib/supabase/types';
 
-export default function MarketPage() {
+export default function WagerDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const marketId = params.id as string;
+  const wagerId = params.id as string;
   
-  console.log('📄 Market page loaded, ID:', marketId);
-  
-  const { market, loading: marketLoading } = useMarket(marketId);
-  const { orderBook, loading: orderBookLoading } = useOrderBook(
-    market?.tokens?.[0]?.token_id || null
-  );
   const { walletAddress, connected, connecting, connect, disconnect } = useWallet();
-
-  const [selectedOutcome, setSelectedOutcome] = useState(0);
   const [isNavHovered, setIsNavHovered] = useState(false);
+  const [wager, setWager] = useState<CryptoWager | SportsWager | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Format volume
-  const formatVolume = (vol: number) => {
-    if (vol >= 1000000) return `$${(vol / 1000000).toFixed(2)}M`;
-    if (vol >= 1000) return `$${(vol / 1000).toFixed(1)}k`;
-    return `$${vol.toFixed(0)}`;
+  // Format address helper
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
-  // Get market data
-  const outcomes = Array.isArray(market?.outcomes) ? market.outcomes : (market?.tokens?.map(t => t.outcome) || ['Yes', 'No']);
-  const prices = market?.tokens?.map(t => parseFloat(t.price || '0.5')) || [0.5, 0.5];
-  const volume24h = parseFloat(market?.volume_24hr || market?.volume24hr || '0');
-  const totalVolume = parseFloat(market?.volume || '0');
-  const liquidity = parseFloat(market?.liquidity || '0');
+  // Fetch wager details
+  useEffect(() => {
+    const fetchWager = async () => {
+      setLoading(true);
+      
+      // Try crypto wagers first
+      const { data: cryptoWager, error: cryptoError } = await supabase
+        .from('crypto_wagers')
+        .select('*')
+        .eq('id', wagerId)
+        .single();
 
-  if (marketLoading) {
+      if (cryptoWager && !cryptoError) {
+        setWager(cryptoWager as CryptoWager);
+        setLoading(false);
+        return;
+      }
+
+      // Try sports wagers
+      const { data: sportsWager, error: sportsError } = await supabase
+        .from('sports_wagers')
+        .select('*')
+        .eq('id', wagerId)
+        .single();
+
+      if (sportsWager && !sportsError) {
+        setWager(sportsWager as SportsWager);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    if (wagerId) {
+      fetchWager();
+    }
+  }, [wagerId]);
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <motion.div
@@ -53,13 +75,13 @@ export default function MarketPage() {
     );
   }
 
-  if (!market) {
+  if (!wager) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Market Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Wager Not Found</h1>
           <Link href="/trade" className="text-blue-600 hover:underline">
-            ← Back to Markets
+            ← Back to Trade
           </Link>
         </div>
       </div>
@@ -175,17 +197,17 @@ export default function MarketPage() {
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             )}
             <span className="hidden sm:inline">
-              {connecting ? 'Connecting...' : connected ? `${walletAddress?.slice(0, 6)}...${walletAddress?.slice(-4)}` : 'Connect Wallet'}
+              {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect Wallet'}
             </span>
             <span className="sm:hidden">
-              {connecting ? 'Connecting...' : connected ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` : 'Connect'}
+              {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect'}
             </span>
           </motion.button>
         </div>
       </motion.nav>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-[1800px] mx-auto px-6 pb-16">
+      <div className="relative z-10 max-w-[1800px] mx-auto px-4 md:px-6 pb-16">
         {/* Back Button */}
         <Link href="/trade">
           <motion.button
@@ -193,17 +215,18 @@ export default function MarketPage() {
             style={{
               background: 'rgba(255, 255, 255, 0.8)',
               backdropFilter: 'blur(12px)',
+              fontFamily: 'Varien, sans-serif'
             }}
             whileHover={{ scale: 1.02, x: -4 }}
           >
-            ← Back to Markets
+            ← Back to Trade
           </motion.button>
         </Link>
 
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - Market Info & Stats */}
+          {/* Main Content */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            {/* Market Header */}
+            {/* Wager Header */}
             <motion.div
               className="p-6 rounded-xl"
               style={{
@@ -214,154 +237,151 @@ export default function MarketPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              {market.category && (
-                <div className="mb-4">
-                  <span className="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'rgba(255, 255, 255, 0.6)'
-                    }}
-                  >
-                    {market.category}
-                  </span>
-                </div>
-              )}
+              <div className="mb-4">
+                <span className="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontFamily: 'Varien, sans-serif'
+                  }}
+                >
+                  {'token_symbol' in wager ? `CRYPTO WAGER • ${wager.token_symbol}` : 'SPORTS WAGER'}
+                </span>
+              </div>
 
               <h1 className="text-3xl font-bold text-white mb-6 leading-tight" 
                 style={{ fontFamily: 'Varien, sans-serif' }}
               >
-                {market.question}
+                {'token_symbol' in wager 
+                  ? `${wager.token_symbol} Price Prediction`
+                  : 'home_team' in wager 
+                    ? `${wager.home_team} vs ${'away_team' in wager ? wager.away_team : 'TBD'}`
+                    : 'Sports Match'}
               </h1>
 
-              {market.description && (
-                <p className="text-gray-400 mb-6 leading-relaxed">
-                  {market.description}
-                </p>
-              )}
-
-              {/* Outcome Probabilities */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {outcomes.map((outcome, idx) => {
-                  const price = prices[idx] || 0.5;
-                  const percentage = (price * 100).toFixed(1);
-                  
-                  return (
-                    <motion.div
-                      key={idx}
-                      className="relative p-4 rounded-xl cursor-pointer"
-                      style={{
-                        background: idx === 0 
-                          ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.12), rgba(58, 134, 255, 0.12))'
-                          : 'linear-gradient(135deg, rgba(255, 0, 110, 0.12), rgba(251, 86, 7, 0.12))',
-                        border: `2px solid ${selectedOutcome === idx 
-                          ? (idx === 0 ? 'rgba(6, 255, 165, 0.5)' : 'rgba(255, 0, 110, 0.5)')
-                          : (idx === 0 ? 'rgba(6, 255, 165, 0.2)' : 'rgba(255, 0, 110, 0.2)')}`,
-                      }}
-                      onClick={() => setSelectedOutcome(idx)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="text-sm text-gray-400 mb-2 font-medium uppercase tracking-wide">
-                        {outcome}
-                      </div>
-                      <div className="text-4xl font-bold"
-                        style={{
-                          background: idx === 0 
-                            ? 'linear-gradient(135deg, #06ffa5, #3a86ff)'
-                            : 'linear-gradient(135deg, #ff006e, #fb5607)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text'
-                        }}
-                      >
-                        {percentage}%
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Market Stats */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-800">
+              {/* Wager Details */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">24h Volume</div>
-                  <div className="text-xl text-white font-bold">{formatVolume(volume24h)}</div>
+                  <div className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Varien, sans-serif' }}>Status</div>
+                  <div className="text-lg font-bold text-white" style={{ fontFamily: 'Varien, sans-serif' }}>
+                    {wager.status.toUpperCase()}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Total Volume</div>
-                  <div className="text-xl text-white font-bold">{formatVolume(totalVolume)}</div>
+                  <div className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Varien, sans-serif' }}>Amount</div>
+                  <div className="text-lg font-bold text-white" style={{ fontFamily: 'Varien, sans-serif' }}>
+                    {wager.wager_amount} SOL
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Liquidity</div>
-                  <div className="text-xl text-emerald-400 font-bold">{formatVolume(liquidity)}</div>
-                </div>
-              </div>
-
-              {/* Additional Info */}
-              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-800">
-                {market.end_date_iso && (
+                {'target_price' in wager && (
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Market Closes</div>
-                    <div className="text-sm text-white">
-                      {new Date(market.end_date_iso).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                    <div className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Varien, sans-serif' }}>Target Price</div>
+                    <div className="text-lg font-bold text-white" style={{ fontFamily: 'Varien, sans-serif' }}>
+                      ${wager.target_price}
                     </div>
                   </div>
                 )}
-                {market.event_title && (
+                {'prediction' in wager && (
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Event</div>
-                    <div className="text-sm text-white">{market.event_title}</div>
+                    <div className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Varien, sans-serif' }}>Prediction</div>
+                    <div className="text-lg font-bold text-white" style={{ fontFamily: 'Varien, sans-serif' }}>
+                      {wager.prediction.toUpperCase()}
+                    </div>
                   </div>
                 )}
               </div>
             </motion.div>
 
-            {/* Order Book */}
+            {/* Additional Details Section */}
             <motion.div
               className="p-6 rounded-xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.98), rgba(30, 30, 30, 0.98))',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.98))',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
-                Order Book
+              <h2 className="text-xl font-bold text-gray-800 mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
+                Wager Information
               </h2>
-              <OrderBook orderBook={orderBook} loading={orderBookLoading} />
+              <div className="space-y-3 text-sm text-gray-600" style={{ fontFamily: 'Varien, sans-serif' }}>
+                <div className="flex justify-between">
+                  <span>Created:</span>
+                  <span className="font-medium text-gray-800">
+                    {new Date(wager.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Expires:</span>
+                  <span className="font-medium text-gray-800">
+                    {new Date(wager.expires_at).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Creator:</span>
+                  <span className="font-medium text-gray-800">
+                    {formatAddress(wager.creator_address)}
+                  </span>
+                </div>
+                {wager.acceptor_address && (
+                  <div className="flex justify-between">
+                    <span>Acceptor:</span>
+                    <span className="font-medium text-gray-800">
+                      {formatAddress(wager.acceptor_address)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </div>
 
-          {/* Right Column - Trading Panel */}
+          {/* Sidebar - Actions */}
           <div className="col-span-12 lg:col-span-4">
             <motion.div
-              className="sticky top-6 p-6 rounded-xl"
+              className="p-6 rounded-xl sticky top-6"
               style={{
                 background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.98), rgba(30, 30, 30, 0.98))',
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
               }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
               <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
-                Place Trade
+                Actions
               </h2>
-              <TradePanel
-                market={market}
-                isConnected={connected}
-                onConnect={connect}
-              />
+              
+              {wager.status === 'open' && !wager.acceptor_address && (
+                <motion.button
+                  className="w-full px-4 py-3 rounded-lg text-white font-bold mb-3"
+                  style={{
+                    background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
+                    fontFamily: 'Varien, sans-serif'
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Accept Wager
+                </motion.button>
+              )}
+
+              <motion.button
+                className="w-full px-4 py-3 rounded-lg text-white font-bold"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontFamily: 'Varien, sans-serif'
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push('/trade')}
+              >
+                View More Wagers
+              </motion.button>
             </motion.div>
           </div>
         </div>

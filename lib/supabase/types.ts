@@ -49,6 +49,7 @@ export interface User {
     email: string;
     avatar_url?: string;
     wallet_address?: string;
+    profile_image_url?: string;
     total_wagered: number;
     total_won: number;
     total_lost: number;
@@ -56,6 +57,12 @@ export interface User {
     streak_count: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface UserProfile {
+    wallet_address: string;
+    username: string;
+    profile_image_url: string;
 }
 
 export interface CryptoWager {
@@ -80,6 +87,8 @@ export interface CryptoWager {
     metadata?: Json;
     created_at: string;
     updated_at: string;
+    creator_profile?: UserProfile | null;
+    acceptor_profile?: UserProfile | null;
 }
 
 export interface SportsWager {
@@ -108,5 +117,7 @@ export interface SportsWager {
     metadata?: any;
     created_at: string;
     updated_at: string;
+    creator_profile?: UserProfile | null;
+    acceptor_profile?: UserProfile | null;
 }
 

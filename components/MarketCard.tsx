@@ -136,8 +136,7 @@ function MarketCardComponent({ market, onClick, onTrade, index }: MarketCardProp
               <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wide uppercase"
                 style={{
                   background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  fontFamily: 'JetBrains Mono, monospace'
+                  color: 'rgba(255, 255, 255, 0.5)'
                 }}
               >
                 {market.category}
@@ -147,8 +146,15 @@ function MarketCardComponent({ market, onClick, onTrade, index }: MarketCardProp
 
           {/* Question - Clickable area */}
           <h3 
-            className="text-white font-medium text-xs mb-2 line-clamp-2 leading-tight cursor-pointer hover:text-gray-200" 
-            style={{ fontFamily: 'Surgena, sans-serif' }}
+            className="text-white font-medium text-xs mb-2 line-clamp-2 cursor-pointer hover:text-gray-200" 
+            style={{ 
+              minHeight: '2.4em',
+              lineHeight: '1.2',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
             onClick={(e) => {
               e.stopPropagation();
               console.log('Title clicked!');
@@ -186,8 +192,7 @@ function MarketCardComponent({ market, onClick, onTrade, index }: MarketCardProp
                           : 'linear-gradient(135deg, #ff006e, #fb5607)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        fontFamily: 'JetBrains Mono, monospace'
+                        backgroundClip: 'text'
                       }}
                     >
                       {percentage}%
@@ -205,16 +210,16 @@ function MarketCardComponent({ market, onClick, onTrade, index }: MarketCardProp
           <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-800/50 pointer-events-none">
             <div className="flex-1">
               <div className="text-[8px] text-gray-500 mb-0.5 uppercase tracking-wide">Vol 24h</div>
-              <div className="text-sm text-white font-bold font-mono">{formatVolume(volume24h)}</div>
+              <div className="text-sm text-white font-bold">{formatVolume(volume24h)}</div>
             </div>
             <div className="flex-1">
               <div className="text-[8px] text-gray-500 mb-0.5 uppercase tracking-wide">Total</div>
-              <div className="text-sm text-white font-bold font-mono">{formatVolume(totalVolume)}</div>
+              <div className="text-sm text-white font-bold">{formatVolume(totalVolume)}</div>
             </div>
             {liquidity > 0 && (
               <div className="flex-1">
                 <div className="text-[8px] text-gray-500 mb-0.5 uppercase tracking-wide">Liq</div>
-                <div className="text-sm text-emerald-400 font-bold font-mono">{formatVolume(liquidity)}</div>
+                <div className="text-sm text-emerald-400 font-bold">{formatVolume(liquidity)}</div>
               </div>
             )}
           </div>
@@ -248,8 +253,7 @@ function MarketCardComponent({ market, onClick, onTrade, index }: MarketCardProp
                     background: isYes
                       ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))'
                       : 'linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(251, 86, 7, 0.15))',
-                    border: `1.5px solid ${isYes ? 'rgba(6, 255, 165, 0.3)' : 'rgba(255, 0, 110, 0.3)'}`,
-                    fontFamily: 'JetBrains Mono, monospace',
+                    border: `1.5px solid ${isYes ? 'rgba(6, 255, 165, 0.3)' : 'rgba(255, 0, 110, 0.3)'}`
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
