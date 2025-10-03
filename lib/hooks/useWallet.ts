@@ -10,16 +10,27 @@ export function useWallet() {
     const [isConnecting, setIsConnecting] = useState(false);
 
     useEffect(() => {
-        if (wallets.length > 0) {
-            // Get the first Solana wallet
-            const solanaWallet = wallets.find(
-                (w) => w.chainType === 'solana'
-            );
+        console.log('🔍 Wallet detection:', {
+            walletsCount: wallets.length,
+            wallets: wallets.map(w => ({
+                address: w.address,
+                walletClientType: w.walletClientType
+            }))
+        });
 
-            if (solanaWallet) {
-                setWalletAddress(solanaWallet.address);
+        if (wallets.length > 0) {
+            // Get the first connected wallet (any chain type)
+            const activeWallet = wallets[0];
+
+            if (activeWallet) {
+                console.log('✅ Active wallet found:', {
+                    address: activeWallet.address,
+                    walletClientType: activeWallet.walletClientType
+                });
+                setWalletAddress(activeWallet.address);
             }
         } else {
+            console.log('❌ No wallets connected');
             setWalletAddress(null);
         }
     }, [wallets]);
@@ -44,10 +55,21 @@ export function useWallet() {
         }
     };
 
+    // User is connected if they have a wallet address (regardless of authenticated state)
+    // Some wallet extensions might not set authenticated=true immediately
+    const isConnected = !!walletAddress && wallets.length > 0;
+
+    console.log('🔍 Connection state:', {
+        authenticated,
+        walletAddress,
+        walletsCount: wallets.length,
+        isConnected
+    });
+
     return {
         ready,
         authenticated,
-        connected: authenticated && !!walletAddress,
+        connected: isConnected,
         connecting: isConnecting,
         walletAddress,
         user,
