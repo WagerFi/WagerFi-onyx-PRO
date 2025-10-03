@@ -193,7 +193,7 @@ export default function TradePage() {
 
       {/* Navbar */}
       <motion.nav
-        className="absolute top-0 left-0 right-0 z-50 p-6"
+        className="absolute top-0 left-0 right-0 z-50 p-3"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -201,7 +201,7 @@ export default function TradePage() {
         <div className="flex items-center justify-between">
           <Link href="/">
             <motion.div 
-              className="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer"
+              className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer"
               style={{
                 background: 'rgba(30, 30, 30, 1)',
                 backdropFilter: 'blur(12px)',
@@ -234,9 +234,9 @@ export default function TradePage() {
                 transition={{ duration: 0.2 }}
               />
 
-              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2" style={{ fontFamily: 'Surgena, sans-serif' }}>
+              <span className="relative z-10 text-base tracking-tight select-none uppercase flex items-center gap-1.5" style={{ fontFamily: 'Surgena, sans-serif' }}>
                 <span className="font-light text-white">WAGERFI</span>
-                <span className="w-0.5 h-6 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
+                <span className="w-0.5 h-4 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
                   className="font-bold"
                   style={{
@@ -250,7 +250,7 @@ export default function TradePage() {
                 </span>
               </span>
               <span 
-                className="relative z-10 bg-white text-[#2a2a2a] text-sm font-extrabold px-2 py-0.5 rounded-md"
+                className="relative z-10 bg-white text-[#2a2a2a] text-xs font-extrabold px-1.5 py-0.5 rounded"
                 style={{ fontFamily: 'JetBrains Mono, monospace' }}
               >
                 PRO
@@ -264,7 +264,7 @@ export default function TradePage() {
             disabled={connecting || connected}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2"
             style={{
               background: connected 
                 ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.2), rgba(58, 134, 255, 0.2))'
@@ -276,7 +276,7 @@ export default function TradePage() {
             }}
           >
             {!connected && (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20.6 5.4L14.4 1.2C13.2 0.4 11.8 0.4 10.6 1.2L4.4 5.4C3.2 6.2 2.4 7.6 2.4 9.2V14.8C2.4 16.4 3.2 17.8 4.4 18.6L10.6 22.8C11.2 23.2 11.6 23.2 12.2 23.2C12.8 23.2 13.2 23.2 13.8 22.8L20 18.6C21.2 17.8 22 16.4 22 14.8V9.2C22 7.6 21.2 6.2 20.6 5.4Z" fill="#F6851B"/>
                 <path d="M8.2 13.8L11 16.6L15.8 11.8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -289,19 +289,19 @@ export default function TradePage() {
       </motion.nav>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-20 pb-4 max-w-[1800px] mx-auto px-4">
+      <div className="relative z-10 pt-12 pb-4 max-w-[1800px] mx-auto px-4">
         {/* Header & View Mode Tabs */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-xl font-bold text-[#2d2d2d] mb-1" style={{ fontFamily: 'Surgena, sans-serif' }}>
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xl font-bold text-[#2d2d2d]" style={{ fontFamily: 'Surgena, sans-serif' }}>
                 {viewMode === 'trending' ? '🔥 Trending Markets' : 
                  viewMode === 'profitable' ? '💰 Most Profitable' : 
                  viewMode === 'all' ? '📊 All Markets' :
                  viewMode === 'crypto' ? '₿ Crypto Wagers' :
                  '🏆 Sports Wagers'}
               </h2>
-              <p className="text-gray-600 text-xs">
+              <p className="text-gray-500 text-xs">
                 {isWagerMode 
                   ? `Showing ${displayWagers.length} of ${totalItems} wagers`
                   : `Showing ${displayMarkets.length} of ${totalItems} markets`
@@ -443,7 +443,7 @@ export default function TradePage() {
           className="overflow-y-auto overflow-x-hidden custom-scrollbar-hidden"
           style={{ 
             height: 'calc(100vh - 280px)',
-            minHeight: '500px'
+            minHeight: '400px'
           }}
         >
           <style jsx>{`
@@ -456,7 +456,7 @@ export default function TradePage() {
             }
           `}</style>
           {/* Markets/Wagers Grid - Tighter spacing for compact cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 px-4 py-6">
             {loading ? (
               <div className="col-span-full py-24 text-center text-gray-500">
                 <motion.div

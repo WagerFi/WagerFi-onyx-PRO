@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { MiniPriceChart } from './MiniPriceChart';
 import type { CryptoWager, SportsWager } from '@/lib/supabase/types';
 import { supabase } from '@/lib/supabase/client';
@@ -30,7 +30,7 @@ function getTimeLeft(expiryTime: string): string {
   return 'Soon';
 }
 
-export function WagerMarketCard({ wager, index }: WagerMarketCardProps) {
+function WagerMarketCardComponent({ wager, index }: WagerMarketCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [priceHistory, setPriceHistory] = useState<Array<{ price: number; timestamp: number }>>([]);
@@ -430,4 +430,25 @@ export function WagerMarketCard({ wager, index }: WagerMarketCardProps) {
     </motion.div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+// Only re-render if wager data actually changes
+export const WagerMarketCard = memo(WagerMarketCardComponent, (prevProps, nextProps) => {
+  // If index changed, don't skip render
+  if (prevProps.index !== nextProps.index) return false;
+  
+  // Compare wager ID
+  if (prevProps.wager.id !== nextProps.wager.id) return false;
+  
+  // Compare status (most important field that changes)
+  if (prevProps.wager.status !== nextProps.wager.status) return false;
+  
+  // For crypto wagers, compare resolution_price
+  if (isCryptoWager(prevProps.wager) && isCryptoWager(nextProps.wager)) {
+    if (prevProps.wager.resolution_price !== nextProps.wager.resolution_price) return false;
+  }
+  
+  // If we got here, props are essentially the same - skip render
+  return true;
+});
 
