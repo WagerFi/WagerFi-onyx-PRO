@@ -13,8 +13,16 @@ export function useMarkets() {
     const [searching, setSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchMarkets = useCallback(async () => {
-        setLoading(true);
+    // Infinite scroll state
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [currentOffset, setCurrentOffset] = useState(0);
+
+    const fetchMarkets = useCallback(async (reset = true) => {
+        if (reset) {
+            setLoading(true);
+            setCurrentOffset(0);
+        }
         setError(null);
 
         try {
@@ -23,8 +31,7 @@ export function useMarkets() {
             // Fetch active markets directly from Polymarket /markets endpoint
             const allMarkets = await gammaClient.getAllMarkets({
                 active: true,
-                closed: false,
-                limit: 100  // Top 100 by 24hr volume (trending markets)
+                limit: 500  // Top 500 by 24hr volume (trending markets)
             });
 
             console.log(`✅ Fetched ${allMarkets.length} active markets from Polymarket`);
@@ -88,7 +95,7 @@ export function useMarkets() {
 
                     return (volB * boostB) - (volA * boostA);
                 })
-                .slice(0, 100); // Top 100 by volume (increased from 50)
+                ; // Show all markets sorted by volume for infinite scroll
 
             // Sort for profitable (by price spread + volume)
             const profitableMarkets = [...validMarkets]
@@ -167,6 +174,53 @@ export function useMarkets() {
         }
     }, []);
 
+    // Load more markets for infinite scroll
+    const loadMoreMarkets = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+
+        setLoadingMore(true);
+        try {
+            const nextOffset = currentOffset + 100;
+            console.log(`📡 Loading more markets from offset ${nextOffset}...`);
+
+            const moreMarkets = await gammaClient.getAllMarkets({
+                active: true,
+                limit: 100,
+                offset: nextOffset
+            });
+
+            console.log(`✅ Loaded ${moreMarkets.length} more markets`);
+
+            if (moreMarkets.length === 0) {
+                setHasMore(false);
+            } else {
+                // Filter and sort by volume
+                const validMarkets = moreMarkets.filter(m => {
+                    if (!m || !m.question) return false;
+                    const hasTokens = m.tokens && Array.isArray(m.tokens) && m.tokens.length > 0;
+                    const hasOutcomePrices = m.outcomePrices || m.outcome_prices;
+                    const hasOutcomes = m.outcomes && (Array.isArray(m.outcomes) ? m.outcomes.length > 0 : true);
+                    return hasOutcomes && (hasTokens || hasOutcomePrices);
+                });
+
+                // Sort by volume (highest first)
+                const sortedMarkets = validMarkets.sort((a, b) => {
+                    const volumeA = parseFloat(a.volume_24hr || a.volume24hr || a.volume || '0');
+                    const volumeB = parseFloat(b.volume_24hr || b.volume24hr || b.volume || '0');
+                    return volumeB - volumeA;
+                });
+
+                // Append to existing trending markets
+                setTrending(prev => [...prev, ...sortedMarkets]);
+                setCurrentOffset(nextOffset);
+            }
+        } catch (error) {
+            console.error('❌ Error loading more markets:', error);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [loadingMore, hasMore, currentOffset]);
+
     return {
         markets,
         trending,
@@ -175,8 +229,11 @@ export function useMarkets() {
         loading,
         searching,
         error,
+        hasMore,
+        loadingMore,
         refetch: fetchMarkets,
         searchMarkets,
+        loadMoreMarkets,
     };
 }
 

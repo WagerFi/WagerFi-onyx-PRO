@@ -38,7 +38,7 @@ export class GammaClient {
             const response = await this.client.get('/public-search', {
                 params: {
                     q: query,
-                    limit_per_type: 100, // Get up to 100 results per type (events, markets, etc.)
+                    limit_per_type: 500, // Get up to 200 results per type (events, markets, etc.)
                     search_tags: true,
                     _t: Date.now(),
                 }
@@ -103,7 +103,6 @@ export class GammaClient {
      */
     async getAllMarkets(params?: {
         active?: boolean;
-        closed?: boolean;
         limit?: number;
         offset?: number;
     }): Promise<Market[]> {
@@ -112,12 +111,12 @@ export class GammaClient {
             console.log('📡 Step 1: Fetching trending markets from /markets endpoint...');
             const marketsResponse = await this.client.get('/markets', {
                 params: {
-                    limit: params?.limit || 100,
+                    limit: params?.limit || 500,
                     offset: params?.offset || 0,
                     order: 'volume24hr',
                     ascending: false,
                     active: params?.active !== false,
-                    closed: params?.closed === true ? true : false,
+                    closed: false, // Never show closed markets
                     _t: Date.now(),
                 }
             });
@@ -137,7 +136,7 @@ export class GammaClient {
             console.log('📡 Step 2: Fetching events for multi-outcome markets...');
             const eventsResponse = await this.client.get('/events', {
                 params: {
-                    limit: 200,
+                    limit: 1000,
                     offset: 0,
                     closed: false,
                     _t: Date.now(),
@@ -681,7 +680,7 @@ export class GammaClient {
      */
     async getTrendingMarkets(limit: number = 50): Promise<Market[]> {
         try {
-            const markets = await this.getAllMarkets({ active: true, closed: false, limit: 500 });
+            const markets = await this.getAllMarkets({ active: true, limit: 500 });
 
             // Calculate trend score based on volume_24hr
             const marketsWithScore = markets.map(market => {
@@ -712,7 +711,7 @@ export class GammaClient {
      */
     async getProfitableMarkets(limit: number = 50): Promise<Market[]> {
         try {
-            const markets = await this.getAllMarkets({ active: true, closed: false, limit: 500 });
+            const markets = await this.getAllMarkets({ active: true, limit: 500 });
 
             // Calculate profitability score based on price differentials
             const marketsWithScore = markets.map(market => {

@@ -18,12 +18,28 @@ function isCryptoWager(wager: CryptoWager | SportsWager): wager is CryptoWager {
   return 'token_symbol' in wager;
 }
 
-function getTimeLeft(expiryTime: string): string {
+function getTimeLeft(expiryTime: string, wager?: CryptoWager | SportsWager): string {
   const now = new Date();
-  const expiry = new Date(expiryTime);
-  const diff = expiry.getTime() - now.getTime();
   
-  if (diff < 0) return 'expired';
+  // For sports wagers, use game_time instead of expiry_time for more accurate countdown
+  let targetTime: Date;
+  if (wager && !isCryptoWager(wager)) {
+    // Sports wager - use game_time
+    targetTime = new Date(wager.game_time);
+  } else {
+    // Crypto wager - use expiry_time
+    targetTime = new Date(expiryTime);
+  }
+  
+  const diff = targetTime.getTime() - now.getTime();
+  
+  if (diff < 0) {
+    // For sports, show "live" if game has started, otherwise "ended"
+    if (wager && !isCryptoWager(wager)) {
+      return wager.status === 'live' ? 'live' : 'ended';
+    }
+    return 'expired';
+  }
   
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -41,7 +57,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
   const [isAcceptHovered, setIsAcceptHovered] = useState(false);
   const [isViewHovered, setIsViewHovered] = useState(false);
 
-  const timeLeft = getTimeLeft(wager.expiry_time);
+  const timeLeft = getTimeLeft(wager.expiry_time, wager);
 
   const isCreator = userWalletAddress && wager.creator_address === userWalletAddress;
   const canAccept = wager.status === 'open' && !isCreator && onAccept;
@@ -110,7 +126,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
   if (isCryptoWager(wager)) {
     return (
       <motion.div
-        className="relative group"
+        className="relative cursor-pointer"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.02 }}
@@ -145,7 +161,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
         />
 
         <div
-          className="relative p-6 rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-[1.02] flex flex-col"
+          className="relative p-6 rounded-xl overflow-hidden cursor-pointer flex flex-col"
           onClick={() => onView?.(wager.id)}
           style={{
             background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
@@ -164,6 +180,20 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
               zIndex: 2,
             }}
           />
+          
+          {/* Token Background Image for Crypto Wagers */}
+          {isCryptoWager(wager) && wager.metadata && typeof wager.metadata === 'object' && 'token_snapshot' in wager.metadata && (wager.metadata as any).token_snapshot?.logo && (
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+              style={{
+                backgroundImage: `url(${(wager.metadata as any).token_snapshot.logo})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.8,
+                zIndex: 1,
+              }}
+            />
+          )}
           
           {/* Glass pattern overlay */}
           <div
@@ -196,22 +226,56 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
               </div>
             </div>
 
-            {/* Header */}
-            <h3 className="text-white font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Varien, sans-serif' }}>
-              {wager.token_symbol.toUpperCase()}
-              <span className={wager.prediction_type === 'above' ? 'text-green-400 ml-1' : 'text-red-400 ml-1'}>
-                {wager.prediction_type === 'above' ? ' ↑ ' : ' ↓ '}
-              </span>
-              ${wager.target_price.toLocaleString()}
-            </h3>
+            {/* Header with Token Icon */}
+            <div className="flex items-start gap-2.5 mb-3">
+              {/* Token Icon */}
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm border border-white/5">
+                {wager.metadata && typeof wager.metadata === 'object' && 'token_snapshot' in wager.metadata && (wager.metadata as any).token_snapshot?.logo ? (
+                  <img
+                    src={(wager.metadata as any).token_snapshot.logo}
+                    alt={wager.token_symbol}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-lg">
+                    ₿
+                  </div>
+                )}
+              </div>
+
+              {/* Title and Category */}
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] text-gray-400 mb-0.5 uppercase tracking-wide">
+                  CRYPTO
+                </div>
+                <h3 className="text-xs font-medium text-white leading-tight" style={{ 
+                  height: '2.4em',
+                  lineHeight: '1.2em',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  {wager.token_symbol.toUpperCase()}
+                  <span className={wager.prediction_type === 'above' ? 'text-green-400 ml-1' : 'text-red-400 ml-1'}>
+                    {wager.prediction_type === 'above' ? ' ↑ ' : ' ↓ '}
+                  </span>
+                  ${wager.target_price.toLocaleString()}
+                </h3>
+              </div>
+            </div>
 
             {/* Price Chart */}
             <div className="mb-3 h-20 rounded-lg overflow-hidden relative"
               style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(6, 255, 165, 0.08))',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 255, 165, 0.15))',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
               }}
             >
+              {/* Background mask to hide token image behind chart */}
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
               <div className="relative z-10 p-2 h-full">
                 {currentPrice > 0 && (
                   <MiniPriceChart
@@ -231,21 +295,25 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
                 { label: 'Current', value: currentPrice > 0 ? `$${currentPrice.toLocaleString()}` : '---', color: 'text-white' },
                 { label: 'Target', value: `$${wager.target_price.toLocaleString()}`, color: 'text-purple-400' }
               ].map((item, idx) => (
-                <div key={idx} className="p-2 rounded-lg"
+                <div key={idx} className="p-2 rounded-lg relative overflow-hidden"
                   style={{
                     background: idx === 0 
-                      ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.08), rgba(58, 134, 255, 0.08))'
-                      : 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(251, 86, 7, 0.08))',
-                    border: `1px solid ${idx === 0 ? 'rgba(6, 255, 165, 0.2)' : 'rgba(139, 92, 246, 0.2)'}`,
+                      ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))'
+                      : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
+                    border: `1px solid ${idx === 0 ? 'rgba(6, 255, 165, 0.3)' : 'rgba(139, 92, 246, 0.3)'}`,
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
                   }}
                 >
-                  <div className="text-[9px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide"
->
-                    {item.label}
-                  </div>
-                  <div className={`text-base font-bold ${item.color}`}
->
-                    {item.value}
+                  {/* Background mask to hide token image behind price boxes */}
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                  <div className="relative z-10">
+                    <div className="text-[9px] text-gray-400 mb-0.5 font-medium uppercase tracking-wide">
+                      {item.label}
+                    </div>
+                    <div className={`text-base font-bold ${item.color}`}>
+                      {item.value}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -255,14 +323,16 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
             <div className="flex items-center gap-3 mb-3 pb-2 border-b border-white/10">
               <div className="flex-1">
                 <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">Amount</div>
-                <div className="text-xs text-white font-bold" >
-                  {wager.amount} SOL
+                <div className="text-xs text-white font-bold flex items-center gap-1" >
+                  {wager.amount}
+                  <img src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" alt="SOL" className="w-3 h-3" />
                 </div>
               </div>
               <div className="flex-1">
                 <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">Win</div>
-                <div className="text-xs text-green-400 font-bold" >
-                  {(wager.amount * 1.95).toFixed(2)} SOL
+                <div className="text-xs text-green-400 font-bold flex items-center gap-1" >
+                  {(wager.amount * 1.95).toFixed(2)}
+                  <img src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" alt="SOL" className="w-3 h-3" />
                 </div>
               </div>
             </div>
@@ -270,94 +340,38 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
               {canAccept && (
-                <motion.button
-                  className="relative py-2 px-3 rounded-lg font-bold text-xs overflow-hidden"
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onAccept(wager.id);
                   }}
-                  onMouseEnter={() => setIsAcceptHovered(true)}
-                  onMouseLeave={() => setIsAcceptHovered(false)}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    e.currentTarget.style.setProperty('--btn-mouse-x', `${x}px`);
-                    e.currentTarget.style.setProperty('--btn-mouse-y', `${y}px`);
-                  }}
+                  className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))',
-                    border: '1.5px solid rgba(6, 255, 165, 0.3)',
+                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15))',
+                    color: '#22c55e',
+                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                    boxShadow: '0 0 10px rgba(34, 197, 94, 0.1)',
                   }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  <motion.div
-                    className="absolute pointer-events-none"
-                    style={{
-                      inset: 0,
-                      borderRadius: '8px',
-                      background: `radial-gradient(80px circle at var(--btn-mouse-x, 50%) var(--btn-mouse-y, 50%), rgba(6, 255, 165, 0.3) 0%, transparent 50%)`,
-                    }}
-                    animate={{ opacity: isAcceptHovered ? 1 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                  <span className="relative z-10"
-                    style={{
-                      background: 'linear-gradient(135deg, #06ffa5, #3a86ff)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    ACCEPT
-                  </span>
-                </motion.button>
+                  ACCEPT
+                </button>
               )}
               {onView && (
-                <motion.button
-                  className={`relative py-2 px-3 rounded-lg font-bold text-xs overflow-hidden ${!canAccept ? 'col-span-2' : ''}`}
+                <button
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg ${!canAccept ? 'col-span-2' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onView(wager.id);
                   }}
-                  onMouseEnter={() => setIsViewHovered(true)}
-                  onMouseLeave={() => setIsViewHovered(false)}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    e.currentTarget.style.setProperty('--btn-mouse-x', `${x}px`);
-                    e.currentTarget.style.setProperty('--btn-mouse-y', `${y}px`);
-                  }}
                   style={{
-                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
-                    border: '1.5px solid rgba(139, 92, 246, 0.3)',
+                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15))',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    boxShadow: '0 0 10px rgba(239, 68, 68, 0.1)',
                   }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  <motion.div
-                    className="absolute pointer-events-none"
-                    style={{
-                      inset: 0,
-                      borderRadius: '8px',
-                      background: `radial-gradient(80px circle at var(--btn-mouse-x, 50%) var(--btn-mouse-y, 50%), rgba(139, 92, 246, 0.3) 0%, transparent 50%)`,
-                    }}
-                    animate={{ opacity: isViewHovered ? 1 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                  <span className="relative z-10"
-                    style={{
-                      background: 'linear-gradient(135deg, #8b5cf6, #fb5607)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    VIEW
-                  </span>
-                </motion.button>
+                  VIEW
+                </button>
               )}
             </div>
           </div>
@@ -369,7 +383,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
   // Sports Wager
   return (
     <motion.div
-      className="relative group"
+      className="relative cursor-pointer"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.02 }}
@@ -383,45 +397,86 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Iridescent hover border */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          top: '-1px',
+          left: '-1px',
+          right: '-1px',
+          bottom: '-1px',
+          borderRadius: '12px',
+          padding: '1.5px',
+          background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'exclude',
+        }}
+        animate={{ opacity: isHovered ? 0.8 : 0 }}
+        transition={{ duration: 0.2 }}
+      />
+
       <div
-        className="relative p-6 rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]"
+        className="relative p-6 rounded-xl overflow-hidden cursor-pointer flex flex-col"
         onClick={() => onView?.(wager.id)}
         style={{
-          background: 'linear-gradient(135deg, rgba(250, 250, 250, 0.98), rgba(245, 245, 245, 0.98))',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          minHeight: '200px',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
         }}
       >
-        {/* Faded grid pattern overlay */}
+        {/* Dark gradient overlay for text readability */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
-            maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.3) 0%, transparent 70%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.3) 0%, transparent 70%)',
+            background: 'linear-gradient(180deg, rgba(10, 10, 15, 0.70) 0%, rgba(5, 5, 10, 0.80) 40%, rgba(0, 0, 0, 0.85) 100%)',
+            zIndex: 2,
           }}
         />
-
-        {/* Iridescent hover border */}
-        <motion.div
-          className="absolute pointer-events-none"
+        
+        {/* Team Background Images for Sports Wagers */}
+        {!isCryptoWager(wager) && (
+          <div className="absolute inset-0 opacity-80">
+            {/* Team 1 Background (Left Half) */}
+            {wager.metadata?.creator_team_snapshot?.logo && (
+              <div 
+                className="absolute top-0 left-0 w-2/5 h-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${wager.metadata.creator_team_snapshot.logo})`,
+                  maskImage: 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  zIndex: 1,
+                }}
+              />
+            )}
+            {/* Team 2 Background (Right Half) */}
+            {wager.metadata?.opponent_team_snapshot?.logo && (
+              <div 
+                className="absolute top-0 right-0 w-2/5 h-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url(${wager.metadata.opponent_team_snapshot.logo})`,
+                  maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  zIndex: 1,
+                }}
+              />
+            )}
+          </div>
+        )}
+        
+        {/* Glass pattern overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40"
           style={{
-            inset: 0,
-            borderRadius: '12px',
-            padding: '2px',
-            background: `radial-gradient(250px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 12%, #ffbe0b 24%, #8338ec 36%, #3a86ff 48%, #06ffa5 60%, transparent 75%)`,
-            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-            WebkitMaskComposite: 'xor',
-            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-            maskComposite: 'exclude',
+            backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+            backgroundSize: '16px 16px',
+            zIndex: 3,
           }}
-          animate={{
-            opacity: isHovered ? 1 : 0,
-          }}
-          transition={{ duration: 0.3 }}
         />
 
         <div className="relative z-10">
@@ -429,46 +484,91 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase ${
-                wager.status === 'open' ? 'bg-cyan-500/20 text-cyan-700 border border-cyan-500/30' :
-                wager.status === 'active' ? 'bg-blue-500/20 text-blue-700 border border-blue-500/30' :
-                wager.status === 'live' ? 'bg-orange-500/20 text-orange-700 border border-orange-500/30' :
-                wager.status === 'resolved' ? 'bg-green-500/20 text-green-700 border border-green-500/30' :
-                'bg-gray-400/20 text-gray-700 border border-gray-400/30'
+                wager.status === 'open' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                wager.status === 'active' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                wager.status === 'live' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                wager.status === 'resolved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                'bg-gray-400/20 text-gray-400 border border-gray-400/30'
               }`} >
                 {wager.status}
               </span>
-              <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase bg-purple-500/20 text-purple-700 border border-purple-500/30"
+              <span className="px-2 py-0.5 rounded text-[9px] font-bold tracking-wide uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30"
 >
                 {wager.sport} • {wager.league}
               </span>
             </div>
             <div className="text-right">
-              <p className="text-[9px] text-gray-600 uppercase tracking-wide" >
+              <p className="text-[9px] text-gray-400 uppercase tracking-wide" >
                 {timeLeft}
               </p>
             </div>
           </div>
 
-          {/* Header */}
-          <h3 className="text-black font-medium text-sm mb-3 leading-tight" style={{ fontFamily: 'Varien, sans-serif' }}>
-            {wager.team1} vs {wager.team2}
-          </h3>
+          {/* Header with Team Icons */}
+          <div className="flex items-start gap-2.5 mb-3">
+            {/* Team Icons */}
+            <div className="flex items-center gap-1">
+              {/* Team 1 Icon */}
+              {wager.metadata?.creator_team_snapshot?.logo ? (
+                <img
+                  src={wager.metadata.creator_team_snapshot.logo}
+                  alt={wager.team1}
+                  className="w-6 h-6 rounded-lg object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-6 h-6 flex items-center justify-center text-xs flex-shrink-0">
+                  🏆
+                </div>
+              )}
+              <span className="text-gray-400 text-xs">vs</span>
+              {/* Team 2 Icon */}
+              {wager.metadata?.opponent_team_snapshot?.logo ? (
+                <img
+                  src={wager.metadata.opponent_team_snapshot.logo}
+                  alt={wager.team2}
+                  className="w-6 h-6 rounded-lg object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-6 h-6 flex items-center justify-center text-xs flex-shrink-0">
+                  🏆
+                </div>
+              )}
+            </div>
 
-          <p className="text-xs text-gray-700 mb-3" >
-            Prediction: <span className="text-black font-bold">{wager.prediction}</span>
+            {/* Title and Category */}
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] text-gray-400 mb-0.5 uppercase tracking-wide">
+                SPORTS
+              </div>
+              <h3 className="text-xs font-medium text-white leading-tight" style={{ 
+                height: '2.4em',
+                lineHeight: '1.2em',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                {wager.team1} vs {wager.team2}
+              </h3>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-300 mb-3" >
+            Prediction: <span className="text-white font-bold">{wager.prediction}</span>
           </p>
 
           {/* Stats Row */}
-          <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-300/50">
+          <div className="flex items-center gap-3 mb-3 pb-2 border-b border-white/10">
             <div className="flex-1">
-              <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Amount</div>
-              <div className="text-xs text-black font-bold" >
-                {wager.amount} SOL
+              <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">Amount</div>
+              <div className="text-xs text-white font-bold flex items-center gap-1" >
+                {wager.amount}
+                <img src="https://wagerfi-sportsapi.b-cdn.net/solwhite.png" alt="SOL" className="w-3 h-3" />
               </div>
             </div>
             <div className="flex-1">
-              <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-wide">Game</div>
-              <div className="text-xs text-black font-bold" >
+              <div className="text-[9px] text-gray-400 mb-0.5 uppercase tracking-wide">Game</div>
+              <div className="text-xs text-white font-bold" >
                 {new Date(wager.game_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
             </div>
@@ -477,94 +577,38 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
             {canAccept && (
-              <motion.button
-                className="relative py-2 px-3 rounded-lg font-bold text-xs overflow-hidden"
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onAccept(wager.id);
                 }}
-                onMouseEnter={() => setIsAcceptHovered(true)}
-                onMouseLeave={() => setIsAcceptHovered(false)}
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
-                  e.currentTarget.style.setProperty('--btn-mouse-x', `${x}px`);
-                  e.currentTarget.style.setProperty('--btn-mouse-y', `${y}px`);
-                }}
+                className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(58, 134, 255, 0.15))',
-                  border: '1.5px solid rgba(6, 255, 165, 0.3)'
+                  background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15))',
+                  color: '#22c55e',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  boxShadow: '0 0 10px rgba(34, 197, 94, 0.1)',
                 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                <motion.div
-                  className="absolute pointer-events-none"
-                  style={{
-                    inset: 0,
-                    borderRadius: '8px',
-                    background: `radial-gradient(80px circle at var(--btn-mouse-x, 50%) var(--btn-mouse-y, 50%), rgba(6, 255, 165, 0.3) 0%, transparent 50%)`,
-                  }}
-                  animate={{ opacity: isAcceptHovered ? 1 : 0 }}
-                  transition={{ duration: 0.2 }}
-                />
-                <span className="relative z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, #06ffa5, #3a86ff)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  ACCEPT
-                </span>
-              </motion.button>
+                ACCEPT
+              </button>
             )}
             {onView && (
-              <motion.button
-                className={`relative py-2 px-3 rounded-lg font-bold text-xs overflow-hidden ${!canAccept ? 'col-span-2' : ''}`}
+              <button
+                className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg ${!canAccept ? 'col-span-2' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onView(wager.id);
                 }}
-                onMouseEnter={() => setIsViewHovered(true)}
-                onMouseLeave={() => setIsViewHovered(false)}
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
-                  e.currentTarget.style.setProperty('--btn-mouse-x', `${x}px`);
-                  e.currentTarget.style.setProperty('--btn-mouse-y', `${y}px`);
-                }}
                 style={{
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(251, 86, 7, 0.15))',
-                  border: '1.5px solid rgba(139, 92, 246, 0.3)'
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15))',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  boxShadow: '0 0 10px rgba(239, 68, 68, 0.1)',
                 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                <motion.div
-                  className="absolute pointer-events-none"
-                  style={{
-                    inset: 0,
-                    borderRadius: '8px',
-                    background: `radial-gradient(80px circle at var(--btn-mouse-x, 50%) var(--btn-mouse-y, 50%), rgba(139, 92, 246, 0.3) 0%, transparent 50%)`,
-                  }}
-                  animate={{ opacity: isViewHovered ? 1 : 0 }}
-                  transition={{ duration: 0.2 }}
-                />
-                <span className="relative z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, #8b5cf6, #fb5607)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  VIEW
-                </span>
-              </motion.button>
+                VIEW
+              </button>
             )}
           </div>
         </div>

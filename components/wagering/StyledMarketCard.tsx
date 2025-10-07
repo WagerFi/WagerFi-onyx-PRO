@@ -78,11 +78,24 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
   const outcome1Image = market.tokens?.[0]?.image || market.image;
   const outcome2Image = market.tokens?.[1]?.image;
 
-  // Get volume - both total and 24hr
+  // Get volume - both total and 24hr with better formatting for small values
   const totalVolume = parseFloat(market.volume || '0');
   const volume24hr = parseFloat(market.volume24hr || market.volume_24hr || '0');
-  const formattedVolume = totalVolume ? `$${(totalVolume / 1000000).toFixed(1)}M` : '$0';
-  const formattedVolume24hr = volume24hr ? `$${(volume24hr / 1000000).toFixed(1)}M` : '$0';
+  
+  const formatVolume = (volume: number): string => {
+    if (volume === 0) return '$0';
+    const volumeInMillions = volume / 1000000;
+    if (volumeInMillions >= 1) {
+      return `$${volumeInMillions.toFixed(1)}M`;
+    } else if (volumeInMillions >= 0.01) {
+      return `$${volumeInMillions.toFixed(2)}M`;
+    } else {
+      return `$${volumeInMillions.toFixed(3)}M`;
+    }
+  };
+  
+  const formattedVolume = formatVolume(totalVolume);
+  const formattedVolume24hr = formatVolume(volume24hr);
 
   // Get dates
   const endDate = market.end_date_iso || market.game_start_time;
@@ -94,11 +107,11 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
 
   // Get liquidity
   const liquidity = parseFloat(market.liquidity || '0');
-  const formattedLiquidity = liquidity ? `$${(liquidity / 1000000).toFixed(1)}M` : null;
+  const formattedLiquidity = liquidity ? formatVolume(liquidity) : null;
 
   // Determine if this is a simple Yes/No market or multi-outcome
   const isYesNo = outcomes.length === 2 && 
-    (outcomes[0]?.toLowerCase() === 'yes' || outcomes[0]?.toLowerCase() === 'no');
+    (outcomes.some(o => o?.toLowerCase() === 'yes') && outcomes.some(o => o?.toLowerCase() === 'no'));
   const isMultiOutcome = outcomes.length > 2;
 
   // Log ALL market data for the first market to see everything Polymarket sends
@@ -145,37 +158,71 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
         e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
       }}
     >
-      {/* Iridescent hover border */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{
-          top: '-1px',
-          left: '-1px',
-          right: '-1px',
-          bottom: '-1px',
-          borderRadius: '12px',
-          padding: '1.5px',
-          background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          maskComposite: 'exclude',
-        }}
-        animate={{ opacity: isHovered ? 0.8 : 0 }}
-        transition={{ duration: 0.2 }}
-      />
+      {/* Iridescent hover border - positioned differently for binary vs multi-outcome */}
+      {!isYesNo ? (
+        /* Multi-outcome cards: border around full container */
+        <motion.div
+          className="absolute pointer-events-none"
+          style={{
+            top: '-1px',
+            left: '-1px',
+            right: '-1px',
+            bottom: '-1px',
+            borderRadius: '12px',
+            padding: '1.5px',
+            background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMaskComposite: 'xor',
+            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            maskComposite: 'exclude',
+          }}
+          animate={{ opacity: isHovered ? 0.8 : 0 }}
+          transition={{ duration: 0.2 }}
+        />
+      ) : null}
 
       <div
-        className="relative rounded-xl overflow-hidden flex flex-col"
+        className={`relative rounded-xl flex flex-col ${isYesNo ? '' : 'overflow-hidden'}`}
         style={{
           background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          minHeight: '200px',
+          minHeight: isYesNo ? 'auto' : '200px',
           boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
         }}
+        onMouseEnter={isYesNo ? () => setIsHovered(true) : undefined}
+        onMouseLeave={isYesNo ? () => setIsHovered(false) : undefined}
+        onMouseMove={isYesNo ? (e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+          e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+        } : undefined}
       >
+        {/* Binary card border: positioned to extend outside the card */}
+        {isYesNo && (
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              top: '-1px',
+              left: '-1px',
+              right: '-1px',
+              bottom: '-1px',
+              borderRadius: '12px',
+              padding: '1.5px',
+              background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              maskComposite: 'exclude',
+              zIndex: 10,
+            }}
+            animate={{ opacity: isHovered ? 0.8 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
         {/* Background image - Fades out when trade panel is open */}
         {outcome1Image && (
           <div
@@ -378,80 +425,132 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
               </button>
             </div>
           ) : (
-            /* OUTCOMES LIST - Scrollable container */
-            <div 
-              className="overflow-y-auto outcomes-scroll px-3 relative z-10"
-              style={{ 
-                maxHeight: '120px', // Max height for scrolling if needed
-                scrollbarGutter: 'stable'
-              }}
-            >
-              {outcomes.map((outcome, idx) => {
-                const percentage = ((prices[idx] || 0) * 100).toFixed(0);
-                const outcomeImage = market.tokens?.[idx]?.image;
-                
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 py-1 hover:bg-white/5 transition-all px-2 -mx-2 border-b border-white/5 last:border-0"
-                    style={{ minHeight: '46px' }}
+            /* OUTCOMES LIST - Different layout for binary vs multi-outcome */
+            <div className="px-3 relative z-10">
+              {isYesNo ? (
+                /* BINARY YES/NO MARKET - Show just two buttons */
+                <div className="flex gap-2 py-1">
+                  {/* Yes Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Find the Yes outcome index
+                      const yesIndex = outcomes.findIndex(o => o.toLowerCase() === 'yes');
+                      setSelectedOutcome({ index: yesIndex >= 0 ? yesIndex : 0, side: 'yes' });
+                    }}
+                    className="flex-1 py-2 px-3 rounded-md font-bold transition-all hover:scale-105 hover:shadow-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15))',
+                      color: '#22c55e',
+                      border: '1px solid rgba(34, 197, 94, 0.4)',
+                      boxShadow: '0 0 10px rgba(34, 197, 94, 0.1)',
+                    }}
                   >
-                    {/* Outcome Name */}
-                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                    {outcomeImage && (
-                      <img
-                        src={outcomeImage}
-                        alt={outcome}
-                          className="w-5 h-5 rounded-full object-cover flex-shrink-0 border border-white/10"
-                      />
-                    )}
-                      <span className="text-xs text-white font-medium truncate">
-                        {outcome}
-                      </span>
+                    <div className="text-[10px]">Yes</div>
+                    <div className="text-sm font-bold">
+                      {((prices.find((_, idx) => outcomes[idx]?.toLowerCase() === 'yes') || prices[0] || 0.5) * 100).toFixed(0)}%
+                    </div>
+                  </button>
+
+                  {/* No Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Find the No outcome index
+                      const noIndex = outcomes.findIndex(o => o.toLowerCase() === 'no');
+                      setSelectedOutcome({ index: noIndex >= 0 ? noIndex : 1, side: 'no' });
+                    }}
+                    className="flex-1 py-2 px-3 rounded-md font-bold transition-all hover:scale-105 hover:shadow-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15))',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      boxShadow: '0 0 10px rgba(239, 68, 68, 0.1)',
+                    }}
+                  >
+                    <div className="text-[10px]">No</div>
+                    <div className="text-sm font-bold">
+                      {((prices.find((_, idx) => outcomes[idx]?.toLowerCase() === 'no') || prices[1] || 0.5) * 100).toFixed(0)}%
+                    </div>
+                  </button>
+                </div>
+              ) : (
+                /* MULTI-OUTCOME MARKET - Show scrollable list */
+                <div 
+                  className="overflow-y-auto overflow-x-hidden outcomes-scroll pr-2"
+                  style={{ 
+                    maxHeight: '120px', // Max height for scrolling if needed
+                    scrollbarGutter: 'stable'
+                  }}
+                >
+                  {outcomes.map((outcome, idx) => {
+                    const percentage = ((prices[idx] || 0) * 100).toFixed(0);
+                    const outcomeImage = market.tokens?.[idx]?.image;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 py-1 hover:bg-white/5 transition-all px-2 -mx-2 border-b border-white/5 last:border-0"
+                        style={{ minHeight: '46px' }}
+                      >
+                        {/* Outcome Name */}
+                        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                        {outcomeImage && (
+                          <img
+                            src={outcomeImage}
+                            alt={outcome}
+                              className="w-5 h-5 rounded-full object-cover flex-shrink-0 border border-white/10"
+                          />
+                        )}
+                          <span className="text-xs text-white font-medium truncate">
+                            {outcome}
+                          </span>
+                          </div>
+
+                        {/* Percentage */}
+                        <div className="text-sm font-bold text-white whitespace-nowrap">
+                          {percentage}%
+                        </div>
+
+                        {/* Yes/No Buttons */}
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOutcome({ index: idx, side: 'yes' });
+                            }}
+                            className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15))',
+                              color: '#22c55e',
+                              border: '1px solid rgba(34, 197, 94, 0.4)',
+                              boxShadow: '0 0 10px rgba(34, 197, 94, 0.1)',
+                            }}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOutcome({ index: idx, side: 'no' });
+                            }}
+                            className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15))',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              boxShadow: '0 0 10px rgba(239, 68, 68, 0.1)',
+                            }}
+                          >
+                            No
+                          </button>
+                        </div>
                       </div>
-
-                    {/* Percentage */}
-                    <div className="text-sm font-bold text-white whitespace-nowrap">
-                      {percentage}%
-                    </div>
-
-                    {/* Yes/No Buttons */}
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOutcome({ index: idx, side: 'yes' });
-                        }}
-                        className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15))',
-                          color: '#22c55e',
-                          border: '1px solid rgba(34, 197, 94, 0.4)',
-                          boxShadow: '0 0 10px rgba(34, 197, 94, 0.1)',
-                        }}
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOutcome({ index: idx, side: 'no' });
-                        }}
-                        className="px-2.5 py-1 rounded-md text-[10px] font-bold transition-all hover:scale-105 hover:shadow-lg"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15))',
-                          color: '#ef4444',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.1)',
-                        }}
-                      >
-                        No
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-                  </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
                 )}
               </div>
 
@@ -494,8 +593,8 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
               </svg>
             </button>
           </div>
-          </div>
-          </div>
+        </div>
+      </div>
 
       <style jsx>{`
         /* Outcomes scrollbar styling */
@@ -511,6 +610,15 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
         }
         .outcomes-scroll::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Hide horizontal scrollbar completely */
+        .outcomes-scroll::-webkit-scrollbar:horizontal {
+          display: none;
+        }
+        .outcomes-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
         }
 
         /* Custom Slider Styling */

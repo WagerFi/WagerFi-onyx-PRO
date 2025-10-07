@@ -134,6 +134,7 @@ export default function TradePage() {
   
   // State management
   const [marketType, setMarketType] = useState<'predictions' | 'crypto' | 'sports'>('predictions');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [wagerFilter, setWagerFilter] = useState<'all' | 'open' | 'live' | 'settled'>('all');
@@ -144,9 +145,10 @@ export default function TradePage() {
   const [wagersLoading, setWagersLoading] = useState(false);
   
   // Market state
-  const { markets, trending, profitable, searchResults, loading: predictionsLoading, searching, searchMarkets, hasMore, loadingMore, loadMoreMarkets } = useMarkets();
+  const { markets, loading: predictionsLoading, error, searchMarkets } = useMarkets();
   
-  // Wager filters only
+  // Categories for predictions
+  const categories = ['All', 'Politics', 'Sports', 'Crypto', 'Business', 'Science'];
   const wagerFilters = ['all', 'open', 'live', 'settled'];
   
   // Debounced search
@@ -155,35 +157,9 @@ export default function TradePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      // Trigger Polymarket search for predictions
-      if (searchQuery.trim().length > 0 && marketType === 'predictions') {
-        searchMarkets(searchQuery.trim());
-      }
-    }, 500);
-    
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, marketType, searchMarkets]);
-
-  // Infinite scroll for Polymarket
-  useEffect(() => {
-    if (marketType !== 'predictions') return;
-
-    const handleScroll = () => {
-      if (loadingMore || !hasMore) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-
-      // Load more when user scrolls to 80% of the content
-      if (scrollPercentage > 0.8) {
-        console.log('🔄 Triggering infinite scroll load...');
-        loadMoreMarkets();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [marketType, loadingMore, hasMore, loadMoreMarkets]);
 
   // Fetch wagers function
   const fetchWagers = async () => {
@@ -192,20 +168,20 @@ export default function TradePage() {
     setWagersLoading(true);
     try {
       const table = marketType === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
-    let query = supabase
+      let query = supabase
         .from(table)
         .select('*')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: false })
         .limit(500);
 
-    // Apply status filter
-    if (wagerFilter === 'open') {
-      query = query.eq('status', 'open');
-    } else if (wagerFilter === 'live') {
+      // Apply status filter
+      if (wagerFilter === 'open') {
+        query = query.eq('status', 'open');
+      } else if (wagerFilter === 'live') {
         if (marketType === 'crypto') {
           query = query.eq('status', 'active');
-      } else {
+        } else {
           query = query.eq('status', 'live');
         }
       } else if (wagerFilter === 'settled') {
@@ -308,10 +284,19 @@ export default function TradePage() {
     };
   }, []);
 
-  // If user is searching, use API search results; otherwise use all trending markets
-  const filteredMarkets = searchQuery.trim().length > 0
-    ? searchResults // Use Polymarket API search results
-    : trending; // Show all trending markets sorted by volume
+  // Filter markets based on category and search
+  const filteredMarkets = markets.filter(market => {
+    const matchesCategory = selectedCategory === 'All' || 
+      (market.tags && market.tags.some((tag: string) => 
+        tag.toLowerCase().includes(selectedCategory.toLowerCase())
+      ));
+    
+    const matchesSearch = !debouncedSearchQuery || 
+      market.question?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      market.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+    
+    return matchesCategory && matchesSearch;
+  });
 
   // Filter wagers based on search
   const filteredCryptoWagers = cryptoWagers.filter(wager => {
@@ -333,7 +318,7 @@ export default function TradePage() {
       ? filteredCryptoWagers.length > 0
       : filteredSportsWagers.length > 0;
 
-  const loading = marketType === 'predictions' ? (predictionsLoading || searching) : wagersLoading;
+  const loading = marketType === 'predictions' ? predictionsLoading : wagersLoading;
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
@@ -357,15 +342,15 @@ export default function TradePage() {
         }}
       >
         {/* Left Side - Logo */}
-          <Link href="/">
+        <Link href="/">
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Varien, sans-serif' }}>
               <span className="font-light">WAGERFI</span>
               <span className="mx-2">|</span>
               <span className="font-bold">ONYX PRO</span>
-                </span>
+            </span>
           </div>
-          </Link>
+        </Link>
 
         {/* Center - Navigation Menu */}
         <div className="flex items-center gap-6">
@@ -373,7 +358,7 @@ export default function TradePage() {
           <span className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">PORTFOLIO</span>
           <span className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">LEADERBOARD</span>
           <span className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">ACTIVITY</span>
-              </div>
+        </div>
 
         {/* Right Side - Wallet & Social */}
         <div className="flex items-center gap-4">
@@ -381,8 +366,8 @@ export default function TradePage() {
           
           {/* Wallet Section */}
           <div className="flex items-center gap-3">
-          {/* SOL Balance */}
-          {connected && (
+            {/* SOL Balance */}
+            {connected && (
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded text-xs"
                 style={{ 
@@ -395,9 +380,9 @@ export default function TradePage() {
                   {solBalance !== null ? solBalance.toFixed(4) : '0.0000'}
                 </span>
               </div>
-          )}
-
-          {/* Connect Wallet Button */}
+            )}
+            
+            {/* Connect Wallet Button */}
             <motion.button
               onClick={() => {
                 if (connected) {
@@ -429,7 +414,7 @@ export default function TradePage() {
               {!connected && <Wallet className="w-3 h-3 text-gray-400" />}
             </motion.button>
           </div>
-          </div>
+        </div>
       </motion.nav>
 
       {/* Main Content Area - Full Width */}
@@ -481,26 +466,50 @@ export default function TradePage() {
             {/* Search Box */}
             <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input
-                  type="text"
+              <input
+                type="text"
                 placeholder="Search markets"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
                 className="w-64 pl-8 pr-4 py-2 rounded-lg text-xs text-white placeholder-gray-500 outline-none transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
-                    border: isSearchFocused 
-                      ? '1px solid rgba(139, 92, 246, 0.5)' 
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                  }}
-                />
+                style={{
+                  background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+                  border: isSearchFocused 
+                    ? '1px solid rgba(139, 92, 246, 0.5)' 
+                    : '1px solid rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              />
+            </div>
           </div>
-        </div>
 
+          {/* Category Filters - Only for predictions */}
+          {marketType === 'predictions' && (
+            <div className="mb-0">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap ${
+                      selectedCategory === category ? 'text-white' : 'text-gray-400 hover:text-white'
+                    }`}
+                    style={{
+                      background: selectedCategory === category
+                        ? 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))'
+                        : 'transparent',
+                      border: selectedCategory === category ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                    }}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Wager Filters - Only for crypto and sports */}
           {(marketType === 'crypto' || marketType === 'sports') && (
@@ -509,7 +518,7 @@ export default function TradePage() {
                 {wagerFilters.map((filter) => (
                   <button
                     key={filter}
-                    onClick={() => setWagerFilter(filter as 'all' | 'open' | 'live' | 'settled')}
+                    onClick={() => setWagerFilter(filter)}
                     className={`px-4 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap ${
                       wagerFilter === filter ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
@@ -532,13 +541,12 @@ export default function TradePage() {
             <div className="text-center py-24">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
               <p className="text-gray-400">Loading markets...</p>
-                </div>
+            </div>
           ) : !hasContent ? (
             <div className="text-center py-24">
               <p className="text-gray-400">No markets found</p>
-                </div>
-              ) : (
-            <>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
               {/* Render Prediction Markets */}
               {marketType === 'predictions' && filteredMarkets.map((market, index) => {
@@ -581,22 +589,6 @@ export default function TradePage() {
                 />
               ))}
             </div>
-
-            {/* Infinite Scroll Loading Indicator */}
-            {marketType === 'predictions' && loadingMore && (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                <span className="ml-3 text-gray-400 text-sm">Loading more markets...</span>
-            </div>
-          )}
-
-            {/* End of Data Indicator */}
-            {marketType === 'predictions' && !hasMore && !predictionsLoading && filteredMarkets.length > 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">You've reached the end of all markets</p>
-              </div>
-            )}
-            </>
           )}
         </div>
       </div>
