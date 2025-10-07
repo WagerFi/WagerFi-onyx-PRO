@@ -12,6 +12,7 @@ import { PredictionMarketCard } from '@/components/wagering/PredictionMarketCard
 import { PoliticalMarketCard } from '@/components/wagering/PoliticalMarketCard';
 import { WagerMarketCard } from '@/components/wagering/WagerMarketCard';
 import { StyledMarketCard } from '@/components/wagering/StyledMarketCard';
+import { WagerCard } from '@/components/wagering/WagerCard';
 import { OrderBook } from '@/components/OrderBook';
 import { TradePanel } from '@/components/TradePanel';
 import { BatchOrderPanel } from '@/components/BatchOrderPanel';
@@ -279,8 +280,6 @@ export default function TradePage() {
     w.team2?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Debug logging
-  console.log(`🎯 Wager counts - Crypto: ${cryptoWagers.length}, Sports: ${sportsWagers.length}, Filtered Crypto: ${filteredCryptoWagers.length}, Filtered Sports: ${filteredSportsWagers.length}`);
 
   // Calculate if we have any content to display
   const hasContent =
@@ -1134,19 +1133,25 @@ export default function TradePage() {
 
               {/* Render Crypto Wagers */}
               {marketType === 'crypto' && filteredCryptoWagers.map((wager, index) => (
-                <WagerMarketCard
+                <WagerCard
                   key={`crypto-${wager.id}`}
                   wager={wager}
-                  index={filteredMarkets.length + index}
+                  index={index}
+                  userWalletAddress={walletAddress || undefined}
+                  onAccept={(wagerId) => console.log('Accept crypto wager:', wagerId)}
+                  onView={(wagerId) => console.log('View crypto wager:', wagerId)}
                 />
               ))}
 
               {/* Render Sports Wagers */}
               {marketType === 'sports' && filteredSportsWagers.map((wager, index) => (
-                <WagerMarketCard
+                <WagerCard
                   key={`sports-${wager.id}`}
                   wager={wager}
-                  index={filteredMarkets.length + filteredCryptoWagers.length + index}
+                  index={index}
+                  userWalletAddress={walletAddress || undefined}
+                  onAccept={(wagerId) => console.log('Accept sports wager:', wagerId)}
+                  onView={(wagerId) => console.log('View sports wager:', wagerId)}
                 />
               ))}
             </div>
