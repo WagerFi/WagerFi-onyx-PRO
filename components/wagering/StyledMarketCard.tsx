@@ -458,24 +458,11 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
         {/* BOTTOM: Volume & Actions */}
         <div className="flex-shrink-0 p-2.5 bg-black/20 backdrop-blur-md border-t border-white/5 flex items-center justify-between relative z-10">
           {/* Volume Info */}
-          <div className="flex items-center gap-2 text-[10px]">
-            <div className="flex items-center gap-0.5">
-              <svg className="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-              <span className="text-gray-400">24h</span>
-              <span className="text-white font-semibold">{formattedVolume24hr}</span>
-                  </div>
-            <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded backdrop-blur-sm" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 px-2 py-1 rounded backdrop-blur-sm" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
               <span className="text-gray-400">Vol</span>
               <span className="text-white font-semibold">{formattedVolume}</span>
-                  </div>
-            {formattedLiquidity && (
-              <div className="flex items-center gap-0.5">
-                <span className="text-gray-400">Liq</span>
-                <span className="text-white font-semibold">{formattedLiquidity}</span>
-                  </div>
-          )}
+            </div>
         </div>
 
           {/* Action Icons */}
