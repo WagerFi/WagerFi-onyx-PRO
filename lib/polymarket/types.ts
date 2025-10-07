@@ -10,6 +10,7 @@ export interface Market {
 
     // Market details
     question: string;
+    title?: string;
     description?: string;
     end_date_iso?: string;
     game_start_time?: string;
@@ -56,6 +57,9 @@ export interface Token {
     outcome: string;
     price: string;
     winner: boolean;
+    image?: string;
+    party?: string;
+    change_24h?: number;
 }
 
 export interface Reward {

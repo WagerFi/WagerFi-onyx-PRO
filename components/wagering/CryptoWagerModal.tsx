@@ -5,6 +5,12 @@ import { X, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Token } from '../wagering/TopCryptoTokensPanel';
 import globalWebSocketManager from '@/lib/hooks/useGlobalWebSocket';
+import { useWallet } from '@/lib/hooks/useWallet';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { createWager } from '@/lib/solana/simpleWagerClient';
+import { PublicKey } from '@solana/web3.js';
+import { supabase } from '@/lib/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface CryptoWagerModalProps {
   isOpen: boolean;
@@ -20,6 +26,13 @@ export function CryptoWagerModal({ isOpen, onClose, token, onWagerCreated }: Cry
   const [isCreating, setIsCreating] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [priceAnimation, setPriceAnimation] = useState<{isAnimating: boolean; isUp: boolean}>({ isAnimating: false, isUp: false });
+  const [error, setError] = useState<string | null>(null);
+  
+  const { user } = usePrivy();
+  const { connection, walletAddress, wallets } = useWallet();
+  
+  // Get the first connected wallet for sending transactions
+  const solanaWallet = wallets?.[0];
 
   // Subscribe to real-time price updates via WebSocket
   useEffect(() => {
@@ -72,28 +85,123 @@ export function CryptoWagerModal({ isOpen, onClose, token, onWagerCreated }: Cry
   };
 
   const handleCreateWager = async () => {
-    if (!prediction || !wagerAmount || !timeOption) return;
+    if (!prediction || !wagerAmount || !timeOption || !connection || !walletAddress || !solanaWallet) {
+      setError('Please fill in all fields and connect your wallet');
+      return;
+    }
 
     setIsCreating(true);
+    setError(null);
+    
     try {
-      // TODO: Implement actual wager creation via API
-      // Use the CURRENT LIVE PRICE as the target price
-      console.log('Creating crypto wager:', {
-        token_symbol: token.symbol,
-        token_name: token.name,
-        current_price: currentPrice, // This is the live price at creation time
-        prediction,
-        wager_amount: parseFloat(wagerAmount),
-        time_option: timeOption
+      console.log('🎯 Creating crypto wager...');
+      
+      // Step 1: Get user profile from Supabase
+      const { data, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('wallet_address', walletAddress)
+        .single();
+
+      if (profileError || !data) {
+        throw new Error('User profile not found. Please ensure you are logged in.');
+      }
+      
+      const userProfile = data as { id: string };
+
+      // Step 2: Calculate expiry time based on timeOption
+      const now = new Date();
+      let expiryTime = new Date();
+      
+      const timeMap: { [key: string]: number } = {
+        '5m': 5,
+        '15m': 15,
+        '30m': 30,
+        '1h': 60,
+        '4h': 240,
+        '8h': 480,
+        '12h': 720,
+        '24h': 1440
+      };
+      
+      const minutes = timeMap[timeOption] || 60;
+      expiryTime.setMinutes(now.getMinutes() + minutes);
+
+      // Step 3: Generate unique wager ID
+      const wagerId = `crypto-${uuidv4()}`;
+      console.log('📝 Wager ID:', wagerId);
+
+      // Step 4: Create escrow transaction on Solana
+      console.log('🔐 Creating escrow transaction...');
+      const creator = new PublicKey(walletAddress);
+      const expiryTimestamp = Math.floor(expiryTime.getTime() / 1000);
+      const metadata = `${token.symbol} ${prediction.toUpperCase()} ${currentPrice}`;
+      
+      // Create send transaction wrapper for Privy wallet
+      const sendTx = async (transaction: any, conn: any) => {
+        // Privy wallets expose different methods depending on wallet type
+        // Try using the wallet provider's sendTransaction
+        if ((solanaWallet as any).sendTransaction) {
+          return await (solanaWallet as any).sendTransaction(transaction, conn);
+        }
+        throw new Error('Wallet does not support sendTransaction');
+      };
+      
+      const escrowResult = await createWager(
+        connection,
+        creator,
+        sendTx,
+        wagerId,
+        parseFloat(wagerAmount),
+        expiryTimestamp,
+        metadata
+      );
+
+      if (!escrowResult.success || !escrowResult.signature) {
+        throw new Error(escrowResult.error || 'Failed to create escrow');
+      }
+
+      console.log('✅ Escrow created:', escrowResult.signature);
+
+      // Step 5: Call background worker to create wager in database
+      console.log('📡 Calling background worker API...');
+      const tokenSlug = token.coingecko_id || token.slug || token.symbol.toLowerCase();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKGROUND_WORKER_URL || 'https://backgroundworker-ltw3.onrender.com'}/create-wager`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wager_type: 'crypto',
+          wager_data: {
+            creator_id: userProfile.id,
+            amount: parseFloat(wagerAmount),
+            token_symbol: token.symbol,
+            token_slug: tokenSlug, // CoinGecko coin ID for WebSocket subscription
+            prediction_type: prediction,
+            target_price: currentPrice, // Use current live price
+            expiry_time: expiryTime.toISOString(),
+            on_chain_signature: escrowResult.signature,
+            escrow_pda: escrowResult.escrowWallet!
+          }
+        })
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to create wager in database: ${errorData.error || response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Wager created successfully:', result);
       
+      // Success! Close modal and refresh
       onWagerCreated?.();
       onClose();
     } catch (error) {
-      console.error('Failed to create wager:', error);
+      console.error('❌ Failed to create wager:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create wager. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -270,19 +378,26 @@ export function CryptoWagerModal({ isOpen, onClose, token, onWagerCreated }: Cry
                 )}
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+
               {/* Create Button */}
               <button
                 onClick={handleCreateWager}
-                disabled={!prediction || !wagerAmount || !timeOption || isCreating}
+                disabled={!prediction || !wagerAmount || !timeOption || isCreating || !walletAddress}
                 className="w-full py-3 rounded-lg font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  background: prediction && wagerAmount && timeOption && !isCreating
+                  background: prediction && wagerAmount && timeOption && !isCreating && walletAddress
                     ? 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)'
                     : '#cccccc',
                   fontFamily: 'Varien, sans-serif'
                 }}
               >
-                {isCreating ? 'Creating Wager...' : `Create Wager at ${formatPrice(currentPrice)}`}
+                {isCreating ? 'Creating Wager...' : walletAddress ? `Create Wager at ${formatPrice(currentPrice)}` : 'Connect Wallet First'}
               </button>
             </div>
           </motion.div>

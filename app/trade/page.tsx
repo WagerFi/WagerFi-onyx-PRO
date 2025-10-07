@@ -8,7 +8,10 @@ import { useWallet } from '@/lib/hooks/useWallet';
 import { useMarkets } from '@/lib/hooks/useMarkets';
 import { useOrderBook } from '@/lib/hooks/useOrderBook';
 import { MarketCard } from '@/components/MarketCard';
+import { PredictionMarketCard } from '@/components/wagering/PredictionMarketCard';
+import { PoliticalMarketCard } from '@/components/wagering/PoliticalMarketCard';
 import { WagerMarketCard } from '@/components/wagering/WagerMarketCard';
+import { StyledMarketCard } from '@/components/wagering/StyledMarketCard';
 import { OrderBook } from '@/components/OrderBook';
 import { TradePanel } from '@/components/TradePanel';
 import { BatchOrderPanel } from '@/components/BatchOrderPanel';
@@ -20,20 +23,194 @@ import { CompactUserStats } from '@/components/CompactUserStats';
 import { supabase } from '@/lib/supabase/client';
 import type { Market } from '@/lib/polymarket/types';
 import type { CryptoWager, SportsWager } from '@/lib/supabase/types';
-import { Zap } from 'lucide-react';
+import { 
+  Zap, 
+  Home, 
+  TrendingUp, 
+  BarChart3, 
+  Wallet, 
+  User, 
+  Settings, 
+  ChevronLeft,
+  Activity,
+  Trophy,
+  FileText
+} from 'lucide-react';
 
-export default function TradePage() {
-  const router = useRouter();
+// Helper function to format wallet address
+function formatAddress(address: string): string {
+  return `${address.slice(0, 4)}...${address.slice(-4)}`;
+}
+
+// Sidebar Social Links Component
+function SidebarSocialLinks() {
   const [isDocsHovered, setIsDocsHovered] = useState(false);
   const [isXHovered, setIsXHovered] = useState(false);
   const [isTelegramHovered, setIsTelegramHovered] = useState(false);
+
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      {/* Docs Button */}
+      <motion.div
+        className="relative"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+          e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+        }}
+        onMouseEnter={() => setIsDocsHovered(true)}
+        onMouseLeave={() => setIsDocsHovered(false)}
+      >
+        <motion.button
+          className="relative h-7 px-2.5 flex items-center justify-center text-white font-light text-[10px] tracking-wide cursor-pointer select-none"
+          style={{ 
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            fontFamily: 'Varien, sans-serif'
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              top: '-2px',
+              left: '-2px',
+              right: '-2px',
+              bottom: '-2px',
+              borderRadius: '10px',
+              padding: '2px',
+              background: `radial-gradient(60px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              maskComposite: 'exclude'
+            }}
+            animate={{ opacity: isDocsHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+          <span className="relative z-10">Docs</span>
+        </motion.button>
+      </motion.div>
+
+      {/* X (Twitter) Button */}
+      <motion.div
+        className="relative"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+          e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+        }}
+        onMouseEnter={() => setIsXHovered(true)}
+        onMouseLeave={() => setIsXHovered(false)}
+      >
+        <motion.button
+          className="relative w-7 h-7 flex items-center justify-center text-white cursor-pointer select-none"
+          style={{ 
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => window.open('https://x.com/wagerfi', '_blank')}
+        >
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              top: '-2px',
+              left: '-2px',
+              right: '-2px',
+              bottom: '-2px',
+              borderRadius: '10px',
+              padding: '2px',
+              background: `radial-gradient(60px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              maskComposite: 'exclude'
+            }}
+            animate={{ opacity: isXHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+          <svg className="relative z-10 w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </motion.button>
+      </motion.div>
+
+      {/* Telegram Button */}
+      <motion.div
+        className="relative"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+          e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+        }}
+        onMouseEnter={() => setIsTelegramHovered(true)}
+        onMouseLeave={() => setIsTelegramHovered(false)}
+      >
+        <motion.button
+          className="relative w-7 h-7 flex items-center justify-center text-white cursor-pointer select-none"
+          style={{ 
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => window.open('https://t.me/wagerfi', '_blank')}
+        >
+          <motion.div
+            className="absolute pointer-events-none"
+            style={{
+              top: '-2px',
+              left: '-2px',
+              right: '-2px',
+              bottom: '-2px',
+              borderRadius: '10px',
+              padding: '2px',
+              background: `radial-gradient(60px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              maskComposite: 'exclude'
+            }}
+            animate={{ opacity: isTelegramHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+          <svg className="relative z-10 w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+          </svg>
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+}
+
+export default function TradePage() {
+  const router = useRouter();
   const [isNavHovered, setIsNavHovered] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [viewMode, setViewMode] = useState<'trending' | 'profitable' | 'all' | 'crypto' | 'sports'>('trending');
   const [tradeMode, setTradeMode] = useState<'single' | 'batch'>('single');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  const { walletAddress, connected, connecting, connect, disconnect } = useWallet();
-  const { markets, trending, profitable, loading: marketsLoading } = useMarkets();
+  const { walletAddress, connected, connecting, connect, disconnect, solBalance, wagerBalance } = useWallet();
+  const { markets, trending, profitable, searchResults, loading: marketsLoading, searching, searchMarkets } = useMarkets();
   const { orderBook, loading: orderBookLoading } = useOrderBook(
     selectedMarket?.tokens?.[0]?.token_id || null
   );
@@ -57,11 +234,62 @@ export default function TradePage() {
   const [selectedGame, setSelectedGame] = useState<any>(null);
   const [selectedToken, setSelectedToken] = useState<any>(null);
 
+  // Predictions page state (for the simple predictions content)
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [marketType, setMarketType] = useState<'predictions' | 'sports' | 'crypto'>('predictions');
+  const [mounted, setMounted] = useState(false);
+  const [hoveredMenuItem, setHoveredMenuItem] = useState<string | null>(null);
+
   // Infinite scroll state
   const [displayedCount, setDisplayedCount] = useState(50);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const ITEMS_PER_LOAD = 50;
+
+  // Computed values for predictions content
+  const predictionsLoading = marketsLoading || wagersLoading || searching;
+  const error = null; // We'll handle errors in individual components
+
+  // Get unique categories from real market data
+  const categories: string[] = [
+    'All',
+    ...Array.from(new Set(
+      markets
+        .map(m => m.category)
+        .filter((cat): cat is string => typeof cat === 'string' && cat.length > 0)
+    ))
+  ];
+
+  // Filter markets by selected category and search
+  // If user is searching, use API search results; otherwise use category filtering
+  const filteredMarkets = searchQuery.trim().length > 0
+    ? searchResults // Use Polymarket API search results
+    : (selectedCategory === 'All'
+        ? trending.slice(0, 100)
+        : markets.filter(m => m.category === selectedCategory).slice(0, 100));
+
+  // Filter wagers by search
+  const filteredCryptoWagers = cryptoWagers.filter(w =>
+    searchQuery.length === 0 ||
+    w.token_symbol?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSportsWagers = sportsWagers.filter(w =>
+    searchQuery.length === 0 ||
+    w.team1?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    w.team2?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Calculate if we have any content to display
+  const hasContent =
+    (marketType === 'predictions' ? filteredMarkets.length > 0 : false) ||
+    (marketType === 'crypto' ? filteredCryptoWagers.length > 0 : false) ||
+    (marketType === 'sports' ? filteredSportsWagers.length > 0 : false);
+
+  // Mount effect for predictions content
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset displayed count when view mode changes
   useEffect(() => {
@@ -71,21 +299,113 @@ export default function TradePage() {
     }
   }, [viewMode, wagerFilter, debouncedSearchQuery]);
 
-  // Debounce search query
+  // Debounce search query and trigger Polymarket API search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
+      // Trigger Polymarket search for predictions
+      if (searchQuery.trim().length > 0 && marketType === 'predictions') {
+        searchMarkets(searchQuery.trim());
+      }
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, marketType, searchMarkets]);
 
-  // Fetch wagers
+  // Fetch wagers on mount and filter changes
   useEffect(() => {
     if (viewMode === 'crypto' || viewMode === 'sports') {
       fetchWagers();
     }
   }, [viewMode, wagerFilter, debouncedSearchQuery]);
+
+  // Real-time subscription for wager updates
+  useEffect(() => {
+    if (viewMode !== 'crypto' && viewMode !== 'sports') return;
+
+    const tableName = viewMode === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
+    
+    console.log(`📡 Setting up real-time subscription for ${tableName}`);
+    
+    const subscription = supabase
+      .channel(`${tableName}-changes`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: tableName
+        },
+        async (payload) => {
+          console.log(`🔄 Real-time update received:`, payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // New wager created - fetch profile and add to list
+            const newWager = payload.new as any;
+            
+            // Fetch creator profile
+            const { data: creatorProfile } = await supabase
+              .from('users')
+              .select('wallet_address, username, profile_image_url')
+              .eq('wallet_address', newWager.creator_address)
+              .single();
+            
+            const wagerWithProfile = {
+              ...newWager,
+              creator_profile: creatorProfile,
+              acceptor_profile: null
+            };
+            
+            if (viewMode === 'crypto') {
+              setCryptoWagers(prev => [wagerWithProfile, ...prev]);
+            } else {
+              setSportsWagers(prev => [wagerWithProfile, ...prev]);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // Wager updated - update in place
+            const updatedWager = payload.new as any;
+            
+            // Fetch profiles if acceptor was added
+            let acceptorProfile = null;
+            if (updatedWager.acceptor_address) {
+              const { data } = await supabase
+                .from('users')
+                .select('wallet_address, username, profile_image_url')
+                .eq('wallet_address', updatedWager.acceptor_address)
+                .single();
+              acceptorProfile = data;
+            }
+            
+            const updateWager = (prev: any[]) => prev.map(w => 
+              w.id === updatedWager.id 
+                ? { ...updatedWager, creator_profile: w.creator_profile, acceptor_profile: acceptorProfile || w.acceptor_profile }
+                : w
+            );
+            
+            if (viewMode === 'crypto') {
+              setCryptoWagers(updateWager);
+            } else {
+              setSportsWagers(updateWager);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Wager deleted - remove from list
+            const deletedId = (payload.old as any).id;
+            
+            if (viewMode === 'crypto') {
+              setCryptoWagers(prev => prev.filter(w => w.id !== deletedId));
+            } else {
+              setSportsWagers(prev => prev.filter(w => w.id !== deletedId));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log(`🔌 Cleaning up real-time subscription for ${tableName}`);
+      subscription.unsubscribe();
+    };
+  }, [viewMode]);
 
   // Infinite scroll handler with throttle
   const handleScroll = () => {
@@ -257,39 +577,49 @@ export default function TradePage() {
     setIsCryptoWagerModalOpen(false);
   };
 
+  // Sidebar menu items
+  const menuItems = [
+    { label: 'MARKETS', href: '/trade', badge: markets.length, active: true },
+    { label: 'ANALYTICS', href: '#', badge: null },
+    { label: 'PORTFOLIO', href: '#', badge: null },
+    { label: 'LEADERBOARD', href: '#', badge: null },
+    { label: 'ACTIVITY', href: '#', badge: 12 },
+  ];
+
   return (
-    <div className="min-h-screen relative overflow-hidden p-4">
-      {/* Base gradient background */}
+    <div className="min-h-screen flex" style={{ background: '#0a0a0a' }}>
+      {/* Grid pattern background */}
       <div 
-        className="absolute inset-0" 
+        className="fixed inset-0 opacity-10 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, #f5f5f5 0%, #e8e8e8 50%, #d8d8f8 100%)'
-        }}
-      />
-      
-      {/* Grid pattern */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-          maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)'
+          backgroundImage: `linear-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(139, 92, 246, 0.15) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
         }}
       />
 
-      {/* Navbar */}
-      <motion.nav
-        className="absolute top-0 left-0 right-0 z-50 p-2 md:p-3"
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      {/* Left Sidebar */}
+      <motion.aside
+        className="fixed left-0 top-0 h-screen z-50 flex flex-col"
+        initial={false}
+        animate={{ width: sidebarCollapsed ? 80 : 260 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(42, 42, 42, 0.98) 0%, rgba(0, 0, 0, 0.98) 100%)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(20px)',
+        }}
       >
-        <div className="flex items-center justify-between">
+        {/* WagerFi Onyx Pro Logo Section - Fits Perfectly */}
           <Link href="/">
+          <div className="p-4 border-b border-gray-800/50">
+            <AnimatePresence mode="wait">
+              {!sidebarCollapsed && (
             <motion.div 
-              className="relative inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg cursor-pointer"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer w-full justify-center"
               style={{ 
                 background: 'rgba(30, 30, 30, 1)',
                 backdropFilter: 'blur(12px)',
@@ -309,7 +639,7 @@ export default function TradePage() {
                 className="absolute pointer-events-none"
                 style={{
                   inset: 0,
-                  borderRadius: '12px',
+                      borderRadius: '8px',
                   padding: '2px',
                   background: `radial-gradient(100px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
                   WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -320,10 +650,9 @@ export default function TradePage() {
                 animate={{ opacity: isNavHovered ? 1 : 0 }}
                 transition={{ duration: 0.2 }}
               />
-
-              <span className="relative z-10 text-sm md:text-base tracking-tight select-none uppercase flex items-center gap-1 md:gap-1.5" style={{ fontFamily: 'Varien, sans-serif' }}>
+                  <span className="relative z-10 text-sm tracking-tight select-none uppercase flex items-center gap-1.5" style={{ fontFamily: 'Varien, sans-serif' }}>
                 <span className="font-light text-white">WAGERFI</span>
-                <span className="w-0.5 h-3 md:h-4 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
+                    <span className="w-0.5 h-3 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
                   className="font-bold"
                   style={{
@@ -338,531 +667,495 @@ export default function TradePage() {
                 </span>
               </span>
               <span 
-                className="relative z-10 bg-white text-[#2a2a2a] text-[10px] md:text-xs font-extrabold px-1 md:px-1.5 py-0.5 rounded"
+                    className="relative z-10 bg-white text-[#2a2a2a] text-[10px] font-extrabold px-1.5 py-0.5 rounded"
               >
                 PRO
               </span>
             </motion.div>
+              )}
+              {sidebarCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
+                  }}
+                >
+                  <Zap className="w-4 h-4 text-white" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           </Link>
 
-          {/* Balance Display & Wallet Connection */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <CompactUserStats />
+        {/* Wallet Stats & Connect Button */}
+        <div className="px-3 pt-4 pb-3 space-y-2">
+          {/* $WAGER Balance */}
+          {connected && (
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                <span className="text-xs font-light text-gray-400">$WAGER</span>
+                <span className="text-xs font-medium text-white">
+                  {wagerBalance ? wagerBalance.toLocaleString() : '0'}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* SOL Balance */}
+          {connected && (
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+            >
+              <div
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                }}
+              >
+                <span className="text-xs font-light text-gray-400">SOL</span>
+                <span className="text-xs font-medium text-white">
+                  {solBalance !== null ? solBalance.toFixed(4) : '0.0000'}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Connect Wallet Button */}
+            <motion.div
+              className="relative"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+              }}
+          >
+            {/* Iridescent hover border */}
+                <motion.div
+                  className="absolute pointer-events-none"
+                  style={{
+                top: '-1px',
+                left: '-1px',
+                right: '-1px',
+                bottom: '-1px',
+                borderRadius: '6px',
+                    padding: '2px',
+                background: `radial-gradient(150px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                    WebkitMaskComposite: 'xor',
+                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                maskComposite: 'exclude',
+                  }}
+              animate={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
             
             <motion.button
               onClick={() => {
                 if (connected) {
-                  console.log('🔌 Disconnect button clicked!');
                   disconnect();
                 } else {
-                  console.log('🔘 Connect button clicked!', { connecting, connected });
                   connect();
                 }
               }}
               disabled={connecting}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-medium flex items-center gap-1 md:gap-2"
+              className="relative w-full flex items-center justify-center gap-2 px-3 py-2 rounded transition-all"
               style={{
-                background: 'rgba(0, 0, 0, 0.95)',
+                background: connected
+                  ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2))'
+                  : 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+                border: connected
+                  ? '1px solid rgba(34, 197, 94, 0.3)'
+                  : '1px solid rgba(255, 255, 255, 0.1)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'white',
               }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {connected && (
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               )}
-              <span className="hidden sm:inline">
+              <span className="text-xs font-light text-white">
                 {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect Wallet'}
               </span>
-              <span className="sm:hidden">
-                {connecting ? 'Connecting...' : connected ? formatAddress(walletAddress!) : 'Connect'}
-              </span>
+              {!connected && <Wallet className="w-3 h-3 text-gray-400" />}
             </motion.button>
+          </motion.div>
           </div>
-        </div>
-      </motion.nav>
 
-      {/* Main Content */}
-      <div className="relative z-10 pt-20 md:pt-20 max-w-[1800px] mx-auto px-2 md:px-4">
-        {/* Header & View Mode Tabs */}
-        <div className="mb-2 md:mb-2">
-          {/* Combined Row: Title, Count, View Mode Tabs & Wager Filters */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 md:gap-4">
-            {/* Left: Title, Counter & View Mode Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4">
-              {/* Title and Counter */}
-              <div className="flex items-baseline gap-2 md:gap-3 min-w-fit">
-                <h2 className="text-base md:text-xl font-bold text-[#2d2d2d] whitespace-nowrap" style={{ fontFamily: 'Varien, sans-serif' }}>
-                  {viewMode === 'trending' ? 'Trending Markets' : 
-                   viewMode === 'profitable' ? 'Most Profitable' : 
-                   viewMode === 'all' ? 'All Markets' :
-                   viewMode === 'crypto' ? 'Crypto Wagers' :
-                   'Sports Wagers'}
-                </h2>
-                <p className="text-gray-500 text-[10px] md:text-xs whitespace-nowrap">
-                  {isWagerMode 
-                    ? `${displayWagers.length} of ${totalItems}`
-                    : `${displayMarkets.length} of ${totalItems}`
-                  }
-                </p>
-              </div>
-
-              {/* View Mode Tabs */}
-              <div className="flex gap-1.5 md:gap-2 flex-wrap">
-                <motion.button
-                onClick={() => setViewMode('trending')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                  viewMode === 'trending'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white/80 text-gray-600 hover:bg-white'
-                }`}
-              >
-                🔥 TRENDING
-              </motion.button>
-              <motion.button
-                onClick={() => setViewMode('profitable')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                  viewMode === 'profitable'
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-                    : 'bg-white/80 text-gray-600 hover:bg-white'
-                }`}
-              >
-                💰 PROFITABLE
-              </motion.button>
-              <motion.button
-                onClick={() => setViewMode('all')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                  viewMode === 'all'
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                    : 'bg-white/80 text-gray-600 hover:bg-white'
-                }`}
-              >
-                📊 ALL MARKETS
-              </motion.button>
-              <motion.button
-                onClick={() => {
-                  setViewMode('crypto');
-                  setWagerFilter('all');
-                  setSearchQuery('');
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                  viewMode === 'crypto'
-                    ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg'
-                    : 'bg-white/80 text-gray-600 hover:bg-white'
-                }`}
-              >
-                ₿ CRYPTO
-              </motion.button>
-              <motion.button
-                onClick={() => {
-                  setViewMode('sports');
-                  setWagerFilter('all');
-                  setSearchQuery('');
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                  viewMode === 'sports'
-                    ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg'
-                    : 'bg-white/80 text-gray-600 hover:bg-white'
-                }`}
-              >
-                🏆 SPORTS
-              </motion.button>
-              </div>
-            </div>
-
-            {/* Right: Wager Filters & Search - Only show when viewing wagers */}
-            {isWagerMode && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-40">
-                  <div className="relative">
-                    {/* Animated border */}
-                    {isSearchFocused && (
-                      <div className="absolute pointer-events-none" style={{ inset: '-2px', borderRadius: '10px', overflow: 'hidden' }}>
-                        <style jsx>{`
-                          @keyframes border-spin {
-                            0% {
-                              background-position: 0% 0%;
-                            }
-                            100% {
-                              background-position: 200% 0%;
-                            }
-                          }
-                          .animated-border {
-                            animation: border-spin 2s linear infinite;
-                            background: linear-gradient(
-                              90deg,
-                              #ff006e 0%,
-                              #fb5607 12.5%,
-                              #ffbe0b 25%,
-                              #8338ec 37.5%,
-                              #3a86ff 50%,
-                              #06ffa5 62.5%,
-                              #ff006e 75%,
-                              #fb5607 87.5%,
-                              #ffbe0b 100%
-                            );
-                            background-size: 200% 100%;
-                          }
-                        `}</style>
-                        <div className="animated-border absolute inset-0" />
-                        <div style={{ position: 'absolute', inset: '2px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.8)' }} />
-                      </div>
-                    )}
-                    <input
-                      type="text"
-                      placeholder={viewMode === 'crypto' ? 'Search token...' : 'Search team...'}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onBlur={() => setIsSearchFocused(false)}
-                      className="relative w-full px-3 md:px-4 py-1.5 md:py-2 pl-8 md:pl-9 rounded-lg text-[10px] md:text-xs text-black placeholder:text-gray-400 bg-white/80 border border-gray-300 focus:border-transparent outline-none transition-all"
-                    />
-                    <svg 
-                      className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 w-3 md:w-3.5 h-3 md:h-3.5 text-gray-400 pointer-events-none z-10"
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Filter Buttons */}
-                <div className="flex gap-1.5 md:gap-2 overflow-x-auto">
-                  {(['all', 'open', 'live', 'settled'] as const).map((filter) => (
-                    <motion.button
-                      key={filter}
-                      onClick={() => setWagerFilter(filter)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold uppercase transition-all whitespace-nowrap ${
-                        wagerFilter === filter
-                          ? 'bg-[#2d2d2d] text-white shadow-md'
-                          : 'bg-white/60 text-gray-600 hover:bg-white'
-                      }`}
-                    >
-                      {filter}
-                    </motion.button>
-                  ))}
-                  
-                  {/* Create Wager Button - Desktop */}
-                  <motion.button
-                    onClick={openCreateWagerModal}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="hidden sm:flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all whitespace-nowrap text-white shadow-md"
-                    style={{
-                      background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
-                      fontFamily: 'Varien, sans-serif'
+        {/* Navigation Menu */}
+        <nav className="flex-1 px-3 py-6 overflow-y-auto border-t border-white/10">
+          <div className="space-y-1">
+            {menuItems.map((item) => (
+        <motion.div 
+                  key={item.label}
+                  className="relative"
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+                  }}
+                  onMouseEnter={() => setHoveredMenuItem(item.label)}
+                  onMouseLeave={() => setHoveredMenuItem(null)}
+                >
+                  {/* Iridescent hover border - only on hover */}
+                  <motion.div
+                    className="absolute pointer-events-none"
+            style={{
+                      top: '-1px',
+                      left: '-1px',
+                      right: '-1px',
+                      bottom: '-1px',
+                      borderRadius: '6px',
+                      padding: '2px',
+                      background: `radial-gradient(150px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
+                      WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                      WebkitMaskComposite: 'xor',
+                      mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                      maskComposite: 'exclude',
                     }}
+                    animate={{ opacity: hoveredMenuItem === item.label ? 1 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                  
+              <motion.button
+                    onClick={() => item.href !== '#' && router.push(item.href)}
+                    className="relative w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded transition-all group"
+                style={{
+                      background: item.active 
+                        ? 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))' 
+                        : 'linear-gradient(135deg, rgba(45, 45, 45, 0.5), rgba(30, 30, 30, 0.5))',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backdropFilter: 'blur(12px)',
+                      WebkitBackdropFilter: 'blur(12px)',
+                    }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                   >
-                    <Zap size={14} className="md:w-4 md:h-4" />
-                    <span>Create Wager</span>
-                  </motion.button>
-                </div>
-              </div>
-            )}
+                    <AnimatePresence mode="wait">
+                      {!sidebarCollapsed && (
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`text-xs font-light tracking-wide ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                    {item.badge && !sidebarCollapsed && (
+                      <span
+                        className="px-1.5 py-0.5 text-[10px] font-bold rounded"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.15)',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+              </motion.button>
+                </motion.div>
+              ))}
           </div>
-        </div>
+        </nav>
 
-        {/* Scrollable Markets/Wagers Container */}
-        <div 
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="overflow-y-auto overflow-x-hidden custom-scrollbar-hidden"
-          style={{ 
-            height: 'calc(100vh - 180px)',
-            minHeight: '400px'
+        {/* Collapse Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="m-3 p-2 rounded-lg transition-all"
+          style={{
+            background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.5), rgba(30, 30, 30, 0.5))',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
-          <style jsx>{`
-            .custom-scrollbar-hidden {
-              scrollbar-width: none; /* Firefox */
-              -ms-overflow-style: none; /* IE and Edge */
-            }
-            .custom-scrollbar-hidden::-webkit-scrollbar {
-              display: none; /* Chrome, Safari, Opera */
-            }
-            @media (min-width: 768px) {
-              .custom-scrollbar-hidden {
-                height: calc(100vh - 240px);
-                min-height: 500px;
-              }
-            }
-          `}</style>
-          {/* Markets/Wagers Grid - Tighter spacing for compact cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-3 px-2 md:px-4 py-2">
-            {loading ? (
-              <div className="col-span-full py-24 text-center text-gray-500">
+          <motion.div
+            animate={{ rotate: sidebarCollapsed ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </motion.div>
+        </button>
+
+        {/* Social Links - Docs, X, Telegram - Below Collapse Button */}
+        <div className="px-3 pb-3">
+          <SidebarSocialLinks />
+                      </div>
+      </motion.aside>
+
+      {/* Main Content Area */}
+      <motion.div
+        className="flex-1 relative h-screen overflow-hidden"
+        initial={false}
+        animate={{ marginLeft: sidebarCollapsed ? 80 : 260 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
+        {/* Base gradient background */}
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'radial-gradient(ellipse at center, #1a1a1a 0%, #0f0f0f 50%, #0a0a0a 100%)'
+          }}
+        />
+        
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px',
+            maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)'
+          }}
+        />
+
+
+      {/* Markets Content - Full Height */}
+      <div className="h-full flex flex-col overflow-hidden">
+        {/* Market Type Tabs - Fixed at top */}
+        <div className="flex-shrink-0 px-4 pt-3 pb-0">
+          <div className="flex items-center justify-between gap-4">
+            {/* Tabs on the left */}
+            <div className="flex items-center gap-2">
+              {[
+                { value: 'predictions', label: 'Polymarket' },
+                { value: 'sports', label: 'Sports Wagers' },
+                { value: 'crypto', label: 'Crypto Wagers' },
+              ].map((type) => (
+                <motion.button
+                  key={type.value}
+                  onClick={() => setMarketType(type.value as any)}
+                  className="relative px-4 py-2 rounded-lg font-medium text-xs transition-all whitespace-nowrap"
+                  style={{
+                    background: marketType === type.value
+                      ? 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))'
+                      : 'transparent',
+                    border: marketType === type.value
+                      ? '1px solid rgba(255, 255, 255, 0.2)'
+                      : '1px solid rgba(255, 255, 255, 0.05)',
+                    color: marketType === type.value ? '#fff' : '#9ca3af',
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {type.label}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Search box on the right */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div className="relative flex items-center">
+                {/* Search Icon */}
+                <svg
+                  className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none z-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder="Search markets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  className="w-64 pl-8 pr-4 py-2 rounded-lg text-xs text-white placeholder-gray-500 outline-none transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
+                    border: isSearchFocused 
+                      ? '1px solid rgba(139, 92, 246, 0.5)' 
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                  }}
+                />
+
+                {/* Loading spinner or Clear button */}
+                {searching ? (
+                  <motion.div
+                    className="absolute right-3"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <svg
+                      className="w-4 h-4 text-purple-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </motion.div>
+                ) : searchQuery ? (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-4 pb-2">
+          {/* Category Filters - Only for predictions */}
+          {marketType === 'predictions' && (
+            <div className="mb-0">
+              <div className="flex items-center gap-2 overflow-x-auto pb-0 scrollbar-hide">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className="px-4 py-1 rounded-lg font-medium text-xs transition-all whitespace-nowrap"
+                    style={{
+                      background: selectedCategory === cat
+                        ? 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))'
+                        : 'transparent',
+                      border: selectedCategory === cat
+                        ? '1px solid rgba(255, 255, 255, 0.2)'
+                        : '1px solid rgba(255, 255, 255, 0.05)',
+                      color: selectedCategory === cat ? '#fff' : '#9ca3af',
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Content Grid */}
+          <div className="relative">
+          {(predictionsLoading || wagersLoading) ? (
+            <div className="flex items-center justify-center py-24">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="inline-block w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full"
+                className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"
                 />
-                <p className="mt-4">Loading {isWagerMode ? 'wagers' : 'markets'}...</p>
               </div>
-            ) : isWagerMode ? (
-              // Display wagers
-              displayWagers.length === 0 ? (
-                <div className="col-span-full py-24 text-center text-gray-500">
-                  <p className="text-2xl mb-2">No {viewMode} wagers available</p>
-                  <p className="text-sm">Check back soon for new wagers!</p>
+          ) : error ? (
+            <div className="text-center py-24">
+              <p className="text-red-400 mb-4">Failed to load markets</p>
+              <p className="text-gray-500 text-sm">{error}</p>
+                </div>
+          ) : !hasContent ? (
+            <div className="text-center py-24">
+              <p className="text-gray-400">No markets found</p>
                 </div>
               ) : (
-                displayWagers.map((wager, index) => (
-                  <WagerMarketCard
-                    key={wager.id}
-                    wager={wager}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+              {/* Render Prediction Markets */}
+              {marketType === 'predictions' && filteredMarkets.map((market, index) => {
+                const marketId = market.conditionId || market.condition_id || market.id || market.slug;
+                return (
+                  <StyledMarketCard
+                    key={`market-${marketId || index}`}
+                    market={market}
                     index={index}
+                    onClick={() => {
+                      if (marketId) {
+                        router.push(`/market/${marketId}`);
+                      }
+                    }}
                   />
-                ))
-              )
-            ) : (
-              // Display markets
-              displayMarkets.length === 0 ? (
-                <div className="col-span-full py-24 text-center text-gray-500">
-                  No markets available
-                </div>
-              ) : (
-                displayMarkets.map((market, index) => {
-                  // Try multiple possible ID fields (API uses different naming conventions)
-                  const marketId = market.conditionId || market.condition_id || market.id || market.slug;
-                  
-                  return (
-                    <MarketCard
-                      key={marketId || `market-${index}`}
-                      market={market}
-                      onClick={() => {
-                        // Navigate to detailed market page
-                        console.log('🔍 Navigating to market:', marketId, market);
-                        if (marketId) {
-                          router.push(`/market/${marketId}`);
-                        } else {
-                          console.error('❌ No market ID found:', market);
-                        }
-                      }}
-                      onTrade={(outcome) => {
-                        // Quick trade - navigate to market page
-                        console.log('💰 Trading on market:', marketId, 'outcome:', outcome);
-                        if (marketId) {
-                          router.push(`/market/${marketId}`);
-                        }
-                      }}
-                      index={index}
-                    />
-                  );
-                })
-              )
-            )}
-          </div>
+                );
+              })}
 
-          {/* Load More Indicator */}
-          {!loading && hasMore && (
-            <div className="col-span-full py-8 text-center text-gray-500">
-              <motion.div
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="text-sm font-medium"
-              >
-                Scroll for more...
-              </motion.div>
+              {/* Render Crypto Wagers */}
+              {marketType === 'crypto' && filteredCryptoWagers.map((wager, index) => (
+                <WagerMarketCard
+                  key={`crypto-${wager.id}`}
+                  wager={wager}
+                  index={filteredMarkets.length + index}
+                />
+              ))}
+
+              {/* Render Sports Wagers */}
+              {marketType === 'sports' && filteredSportsWagers.map((wager, index) => (
+                <WagerMarketCard
+                  key={`sports-${wager.id}`}
+                  wager={wager}
+                  index={filteredMarkets.length + filteredCryptoWagers.length + index}
+                />
+              ))}
             </div>
           )}
+          </div>
         </div>
       </div>
-
-      {/* Docs Button - Bottom Left */}
-      <motion.div
-        className="absolute bottom-3 md:bottom-6 left-3 md:left-6 z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-          e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
-        }}
-        onMouseEnter={() => setIsDocsHovered(true)}
-        onMouseLeave={() => setIsDocsHovered(false)}
-      >
-        <motion.button
-          className="relative px-3 md:px-4 py-0.5 md:py-1 text-white font-light text-[10px] md:text-xs tracking-wide cursor-pointer select-none"
-          style={{ 
-            borderRadius: '10px',
-            fontFamily: 'JetBrains Mono, monospace',
-            background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <motion.div
-            className="absolute pointer-events-none"
-            style={{
-              top: '-2px',
-              left: '-2px',
-              right: '-2px',
-              bottom: '-2px',
-              borderRadius: '12px',
-              padding: '2px',
-              background: `radial-gradient(80px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
-              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-              WebkitMaskComposite: 'xor',
-              mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-              maskComposite: 'exclude'
-            }}
-            animate={{ opacity: isDocsHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-          />
-          <span className="relative z-10">Docs</span>
-        </motion.button>
       </motion.div>
-
-      {/* Social Buttons - Bottom Right */}
-      <div className="absolute bottom-3 md:bottom-6 right-3 md:right-6 flex gap-2 md:gap-3 z-10">
-        {/* X Button */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-            e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
-          }}
-          onMouseEnter={() => setIsXHovered(true)}
-          onMouseLeave={() => setIsXHovered(false)}
-        >
-          <motion.button
-            className="relative w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-white text-xs md:text-sm cursor-pointer select-none"
-            style={{ 
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => window.open('https://twitter.com', '_blank')}
-          >
-            <motion.div
-              className="absolute pointer-events-none"
-              style={{
-                top: '-2px',
-                left: '-2px',
-                right: '-2px',
-                bottom: '-2px',
-                borderRadius: '10px',
-                padding: '2px',
-                background: `radial-gradient(80px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
-                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                WebkitMaskComposite: 'xor',
-                mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                maskComposite: 'exclude'
-              }}
-              animate={{ opacity: isXHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            />
-            <span className="relative z-10">𝕏</span>
-          </motion.button>
-        </motion.div>
-
-        {/* Telegram Button */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-            e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
-          }}
-          onMouseEnter={() => setIsTelegramHovered(true)}
-          onMouseLeave={() => setIsTelegramHovered(false)}
-        >
-          <motion.button
-            className="relative w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-white cursor-pointer select-none"
-            style={{ 
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => window.open('https://t.me', '_blank')}
-          >
-            <motion.div
-              className="absolute pointer-events-none"
-              style={{
-                top: '-2px',
-                left: '-2px',
-                right: '-2px',
-                bottom: '-2px',
-                borderRadius: '10px',
-                padding: '2px',
-                background: `radial-gradient(80px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
-                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                WebkitMaskComposite: 'xor',
-                mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                maskComposite: 'exclude'
-              }}
-              animate={{ opacity: isTelegramHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            />
-            <svg className="relative z-10 w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-            </svg>
-          </motion.button>
-        </motion.div>
-      </div>
-
-      {/* Create Wager Button - Mobile Only */}
-      {isWagerMode && (
-        <div className="sm:hidden fixed bottom-4 left-0 right-0 z-50 p-3 bg-gradient-to-t from-gray-100 via-gray-50/95 to-transparent">
-          <motion.button
-            onClick={openCreateWagerModal}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all text-white shadow-lg"
-            style={{
-              background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
-              fontFamily: 'Varien, sans-serif',
-              boxShadow: '0 4px 20px rgba(6, 255, 165, 0.3)'
-            }}
-          >
-            <Zap size={20} />
-            <span>Create Wager</span>
-          </motion.button>
-        </div>
-      )}
 
       {/* Wager Creation Modals */}
       <UpcomingGamesPanelModal

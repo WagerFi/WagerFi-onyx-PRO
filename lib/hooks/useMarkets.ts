@@ -8,7 +8,9 @@ export function useMarkets() {
     const [markets, setMarkets] = useState<Market[]>([]);
     const [trending, setTrending] = useState<Market[]>([]);
     const [profitable, setProfitable] = useState<Market[]>([]);
+    const [searchResults, setSearchResults] = useState<Market[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searching, setSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchMarkets = useCallback(async () => {
@@ -18,32 +20,75 @@ export function useMarkets() {
         try {
             console.log('📡 Fetching ALL markets from Polymarket...');
 
-            // Fetch a large batch of markets (Polymarket typically has 300-500 events)
+            // Fetch active markets directly from Polymarket /markets endpoint
             const allMarkets = await gammaClient.getAllMarkets({
+                active: true,
                 closed: false,
-                limit: 500  // Increased to get more markets
+                limit: 100  // Top 100 by 24hr volume (trending markets)
             });
 
-            console.log(`✅ Fetched ${allMarkets.length} markets from Polymarket`);
+            console.log(`✅ Fetched ${allMarkets.length} active markets from Polymarket`);
 
-            // Filter out any invalid markets
+            // Filter out any invalid markets (minimal filtering)
             const validMarkets = allMarkets.filter(m => {
-                if (!m) return false;
+                if (!m || !m.question) return false;
+                // Must have either tokens with prices OR outcome prices
                 const hasTokens = m.tokens && Array.isArray(m.tokens) && m.tokens.length > 0;
-                const hasOutcomes = m.outcomes && Array.isArray(m.outcomes) && m.outcomes.length > 0;
-                return hasTokens || hasOutcomes;
+                const hasOutcomePrices = m.outcomePrices || m.outcome_prices;
+                const hasOutcomes = m.outcomes && (Array.isArray(m.outcomes) ? m.outcomes.length > 0 : true);
+                return hasOutcomes && (hasTokens || hasOutcomePrices);
             });
 
             console.log(`✅ ${validMarkets.length} valid markets after filtering`);
 
-            // Sort for trending (by 24h volume)
+            // Count binary vs multi-outcome markets
+            const binaryMarkets = validMarkets.filter(m =>
+                Array.isArray(m.outcomes) ? m.outcomes.length === 2 : false
+            );
+            const multiOutcomeMarkets = validMarkets.filter(m =>
+                Array.isArray(m.outcomes) ? m.outcomes.length > 2 : false
+            );
+
+            console.log('📊 Market breakdown:', {
+                total: validMarkets.length,
+                binary: binaryMarkets.length,
+                multiOutcome: multiOutcomeMarkets.length,
+            });
+
+            // Log sample multi-outcome markets
+            if (multiOutcomeMarkets.length > 0) {
+                console.log('🎯 Sample multi-outcome markets:', multiOutcomeMarkets.slice(0, 5).map(m => ({
+                    question: m.question,
+                    outcomes: Array.isArray(m.outcomes) ? m.outcomes.length : 'not array',
+                    options: Array.isArray(m.outcomes) ? m.outcomes.slice(0, 5) : m.outcomes,
+                    prices: m.tokens?.slice(0, 5).map(t => t.price) || (Array.isArray(m.outcomePrices) ? m.outcomePrices.slice(0, 5) : m.outcomePrices),
+                    volume: m.volume,
+                })));
+
+                // Show position of first multi-outcome in trending
+                const firstMultiPos = validMarkets.findIndex(m =>
+                    Array.isArray(m.outcomes) && m.outcomes.length > 2
+                );
+                console.log(`📍 First multi-outcome market is at position ${firstMultiPos} in all markets`);
+            } else {
+                console.warn('⚠️ No multi-outcome markets found in data!');
+            }
+
+            // Sort for trending (by 24h volume, with boost for multi-outcome)
             const trendingMarkets = [...validMarkets]
                 .sort((a, b) => {
-                    const volA = parseFloat(a.volume_24hr || a.volume24hr || '0');
-                    const volB = parseFloat(b.volume_24hr || b.volume24hr || '0');
-                    return volB - volA;
+                    const volA = parseFloat(a.volume_24hr || a.volume24hr || a.volume || '0');
+                    const volB = parseFloat(b.volume_24hr || b.volume24hr || b.volume || '0');
+
+                    // Boost multi-outcome markets by 20% to ensure visibility
+                    const isMultiA = Array.isArray(a.outcomes) && a.outcomes.length > 2;
+                    const isMultiB = Array.isArray(b.outcomes) && b.outcomes.length > 2;
+                    const boostA = isMultiA ? 1.2 : 1;
+                    const boostB = isMultiB ? 1.2 : 1;
+
+                    return (volB * boostB) - (volA * boostA);
                 })
-                .slice(0, 50); // Top 50 by volume
+                .slice(0, 100); // Top 100 by volume (increased from 50)
 
             // Sort for profitable (by price spread + volume)
             const profitableMarkets = [...validMarkets]
@@ -56,18 +101,27 @@ export function useMarkets() {
                     const volume = parseFloat(market.volume || '0');
 
                     // Higher spread + more volume = more profitable opportunity
-                    const profitScore = (spread * 100) + Math.log(volume + 1);
+                    // Boost multi-outcome markets slightly
+                    const isMulti = Array.isArray(market.outcomes) && market.outcomes.length > 2;
+                    const multiBoost = isMulti ? 1.15 : 1;
+                    const profitScore = ((spread * 100) + Math.log(volume + 1)) * multiBoost;
 
                     return { ...market, profitScore };
                 })
                 .filter(m => (m.profitScore || 0) > 0)
                 .sort((a, b) => (b.profitScore || 0) - (a.profitScore || 0))
-                .slice(0, 50); // Top 50 by profit opportunity
+                .slice(0, 100); // Top 100 by profit opportunity (increased from 50)
+
+            // Count multi-outcome in trending
+            const multiInTrending = trendingMarkets.filter(m =>
+                Array.isArray(m.outcomes) && m.outcomes.length > 2
+            ).length;
 
             console.log('📊 Markets categorized:', {
                 all: validMarkets.length,
                 trending: trendingMarkets.length,
-                profitable: profitableMarkets.length
+                profitable: profitableMarkets.length,
+                multiOutcomeInTrending: multiInTrending,
             });
 
             setMarkets(validMarkets);
@@ -86,21 +140,43 @@ export function useMarkets() {
     }, []);
 
     useEffect(() => {
+        // Fetch markets only on initial mount (page load/refresh)
         fetchMarkets();
-
-        // Refresh markets every 30 seconds
-        const interval = setInterval(fetchMarkets, 30000);
-
-        return () => clearInterval(interval);
     }, [fetchMarkets]);
+
+    // Search function
+    const searchMarkets = useCallback(async (query: string) => {
+        if (!query || query.trim().length === 0) {
+            setSearchResults([]);
+            setSearching(false);
+            return;
+        }
+
+        setSearching(true);
+        setError(null);
+
+        try {
+            const results = await gammaClient.searchMarkets(query, 50);
+            setSearchResults(results);
+        } catch (err: any) {
+            console.error('❌ Error searching markets:', err);
+            setError(err.message || 'Failed to search markets');
+            setSearchResults([]);
+        } finally {
+            setSearching(false);
+        }
+    }, []);
 
     return {
         markets,
         trending,
         profitable,
+        searchResults,
         loading,
+        searching,
         error,
         refetch: fetchMarkets,
+        searchMarkets,
     };
 }
 
@@ -110,7 +186,7 @@ export function useMarket(conditionId: string | null) {
     const [error, setError] = useState<string | null>(null);
 
     // Try to get from the markets list first (cached)
-    const { markets: allMarkets, loading: marketsLoading } = useMarkets();
+    const { markets: allMarkets, searchResults, loading: marketsLoading } = useMarkets();
 
     useEffect(() => {
         if (!conditionId) {
@@ -125,15 +201,24 @@ export function useMarket(conditionId: string | null) {
             return;
         }
 
-        // Markets are loaded, now search in cache
-        console.log('🔍 Looking for market in cache, conditionId:', conditionId);
-        console.log(`📊 Searching through ${allMarkets.length} cached markets`);
-
-        const cachedMarket = allMarkets.find(m =>
+        // Function to find market in an array
+        const findMarket = (markets: Market[]) => markets.find(m =>
             m.conditionId === conditionId ||
             m.condition_id === conditionId ||
             m.id === conditionId
         );
+
+        // Markets are loaded, now search in cache (both main markets and search results)
+        console.log('🔍 Looking for market in cache, conditionId:', conditionId);
+        console.log(`📊 Searching through ${allMarkets.length} cached markets + ${searchResults.length} search results`);
+
+        let cachedMarket = findMarket(allMarkets);
+
+        // If not in main markets, check search results
+        if (!cachedMarket && searchResults.length > 0) {
+            console.log('🔍 Not in main markets, checking search results...');
+            cachedMarket = findMarket(searchResults);
+        }
 
         if (cachedMarket) {
             console.log('✅ Found market in cache:', cachedMarket.question);
@@ -141,28 +226,57 @@ export function useMarket(conditionId: string | null) {
             setError(null);
             setLoading(false);
         } else {
-            // Market not in cache - this shouldn't happen if we came from the market list
-            console.warn('⚠️ Market not found in cache, this is unexpected');
-            setError('Market not found');
-            setLoading(false);
+            // Market not in cache - fetch it directly from the API
+            console.log('📡 Market not in cache, fetching from API...');
+            setLoading(true);
+
+            gammaClient.getMarket(conditionId)
+                .then(fetchedMarket => {
+                    console.log('✅ Fetched market from API:', fetchedMarket.question);
+                    setMarket(fetchedMarket);
+                    setError(null);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error('❌ Failed to fetch market:', err);
+                    setError('Market not found');
+                    setLoading(false);
+                });
         }
-    }, [conditionId, allMarkets, marketsLoading]);
+    }, [conditionId, allMarkets, searchResults, marketsLoading]);
 
     const refetch = useCallback(() => {
-        // Force re-check the cache
+        // Force re-check the cache or fetch from API
         if (!conditionId) return;
 
-        const cachedMarket = allMarkets.find(m =>
+        const findMarket = (markets: Market[]) => markets.find(m =>
             m.conditionId === conditionId ||
             m.condition_id === conditionId ||
             m.id === conditionId
         );
 
+        let cachedMarket = findMarket(allMarkets);
+
+        if (!cachedMarket && searchResults.length > 0) {
+            cachedMarket = findMarket(searchResults);
+        }
+
         if (cachedMarket) {
             setMarket(cachedMarket);
             setError(null);
+        } else {
+            // Fetch from API
+            gammaClient.getMarket(conditionId)
+                .then(fetchedMarket => {
+                    setMarket(fetchedMarket);
+                    setError(null);
+                })
+                .catch(err => {
+                    console.error('❌ Failed to fetch market:', err);
+                    setError('Market not found');
+                });
         }
-    }, [conditionId, allMarkets]);
+    }, [conditionId, allMarkets, searchResults]);
 
     return {
         market,

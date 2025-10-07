@@ -191,5 +191,6 @@ export function useWallet() {
         solBalance,
         wagerBalance,
         connection,
+        wallets, // Export wallets for transaction signing
     };
 }

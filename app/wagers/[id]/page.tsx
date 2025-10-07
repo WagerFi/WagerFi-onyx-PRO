@@ -90,11 +90,11 @@ export default function WagerDetailsPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background */}
+      {/* Background - Coal Theme */}
       <div 
         className="absolute inset-0" 
         style={{
-          background: 'radial-gradient(ellipse at center, #f5f5f5 0%, #e8e8e8 50%, #d8d8f8 100%)'
+          background: 'radial-gradient(ellipse at center, #1a1a1a 0%, #0f0f0f 50%, #0a0a0a 100%)'
         }}
       />
       
@@ -102,8 +102,8 @@ export default function WagerDetailsPage() {
       <div 
         className="absolute inset-0"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`,
           backgroundSize: '50px 50px',
           maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, transparent 100%)'
@@ -211,10 +211,13 @@ export default function WagerDetailsPage() {
         {/* Back Button */}
         <Link href="/trade">
           <motion.button
-            className="mb-6 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 flex items-center gap-2"
+            className="mb-6 px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2"
             style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(12px)',
+              background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+              boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.37)',
               fontFamily: 'Varien, sans-serif'
             }}
             whileHover={{ scale: 1.02, x: -4 }}
@@ -228,39 +231,51 @@ export default function WagerDetailsPage() {
           <div className="col-span-12 lg:col-span-8 space-y-6">
             {/* Wager Header */}
             <motion.div
-              className="p-6 rounded-xl"
+              className="p-6 rounded-xl relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.98), rgba(30, 30, 30, 0.98))',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="mb-4">
-                <span className="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    fontFamily: 'Varien, sans-serif'
-                  }}
+              {/* Glass pattern overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                   linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+                  backgroundSize: '16px 16px',
+                }}
+              />
+              <div className="relative z-10">
+                <div className="mb-4">
+                  <span className="px-3 py-1 rounded-lg text-xs font-bold tracking-wide uppercase"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      fontFamily: 'Varien, sans-serif'
+                    }}
+                  >
+                    {'token_symbol' in wager ? `CRYPTO WAGER • ${wager.token_symbol}` : 'SPORTS WAGER'}
+                  </span>
+                </div>
+
+                <h1 className="text-3xl font-bold text-white mb-6 leading-tight" 
+                  style={{ fontFamily: 'Varien, sans-serif' }}
                 >
-                  {'token_symbol' in wager ? `CRYPTO WAGER • ${wager.token_symbol}` : 'SPORTS WAGER'}
-                </span>
-              </div>
+                  {'token_symbol' in wager 
+                    ? `${wager.token_symbol} Price Prediction`
+                    : 'home_team' in wager 
+                      ? `${wager.home_team} vs ${'away_team' in wager ? wager.away_team : 'TBD'}`
+                      : 'Sports Match'}
+                </h1>
 
-              <h1 className="text-3xl font-bold text-white mb-6 leading-tight" 
-                style={{ fontFamily: 'Varien, sans-serif' }}
-              >
-                {'token_symbol' in wager 
-                  ? `${wager.token_symbol} Price Prediction`
-                  : 'home_team' in wager 
-                    ? `${wager.home_team} vs ${'away_team' in wager ? wager.away_team : 'TBD'}`
-                    : 'Sports Match'}
-              </h1>
-
-              {/* Wager Details */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Wager Details */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-xs text-gray-400 mb-1" style={{ fontFamily: 'Varien, sans-serif' }}>Status</div>
                   <div className="text-lg font-bold text-white" style={{ fontFamily: 'Varien, sans-serif' }}>
@@ -289,51 +304,65 @@ export default function WagerDetailsPage() {
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </motion.div>
 
             {/* Additional Details Section */}
             <motion.div
-              className="p-6 rounded-xl"
+              className="p-6 rounded-xl relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.98))',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-xl font-bold text-gray-800 mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
-                Wager Information
-              </h2>
-              <div className="space-y-3 text-sm text-gray-600" style={{ fontFamily: 'Varien, sans-serif' }}>
-                <div className="flex justify-between">
-                  <span>Created:</span>
-                  <span className="font-medium text-gray-800">
-                    {new Date(wager.created_at).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Expires:</span>
-                  <span className="font-medium text-gray-800">
-                    {new Date(wager.expires_at).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Creator:</span>
-                  <span className="font-medium text-gray-800">
-                    {formatAddress(wager.creator_address)}
-                  </span>
-                </div>
-                {wager.acceptor_address && (
+              {/* Glass pattern overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                   linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+                  backgroundSize: '16px 16px',
+                }}
+              />
+              <div className="relative z-10">
+                <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
+                  Wager Information
+                </h2>
+                <div className="space-y-3 text-sm text-gray-400" style={{ fontFamily: 'Varien, sans-serif' }}>
                   <div className="flex justify-between">
-                    <span>Acceptor:</span>
-                    <span className="font-medium text-gray-800">
-                      {formatAddress(wager.acceptor_address)}
+                    <span>Created:</span>
+                    <span className="font-medium text-white">
+                      {new Date(wager.created_at).toLocaleString()}
                     </span>
                   </div>
-                )}
+                  <div className="flex justify-between">
+                    <span>Expires:</span>
+                    <span className="font-medium text-white">
+                      {new Date(wager.expires_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Creator:</span>
+                    <span className="font-medium text-white">
+                      {formatAddress(wager.creator_address)}
+                    </span>
+                  </div>
+                  {wager.acceptor_address && (
+                    <div className="flex justify-between">
+                      <span>Acceptor:</span>
+                      <span className="font-medium text-white">
+                        {formatAddress(wager.acceptor_address)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -341,47 +370,60 @@ export default function WagerDetailsPage() {
           {/* Sidebar - Actions */}
           <div className="col-span-12 lg:col-span-4">
             <motion.div
-              className="p-6 rounded-xl sticky top-6"
+              className="p-6 rounded-xl sticky top-6 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.98), rgba(30, 30, 30, 0.98))',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
               }}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
-                Actions
-              </h2>
-              
-              {wager.status === 'open' && !wager.acceptor_address && (
+              {/* Glass pattern overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                   linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+                  backgroundSize: '16px 16px',
+                }}
+              />
+              <div className="relative z-10">
+                <h2 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Varien, sans-serif' }}>
+                  Actions
+                </h2>
+                
+                {wager.status === 'open' && !wager.acceptor_address && (
+                  <motion.button
+                    className="w-full px-4 py-3 rounded-lg text-white font-bold mb-3"
+                    style={{
+                      background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
+                      fontFamily: 'Varien, sans-serif'
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Accept Wager
+                  </motion.button>
+                )}
+
                 <motion.button
-                  className="w-full px-4 py-3 rounded-lg text-white font-bold mb-3"
+                  className="w-full px-4 py-3 rounded-lg text-white font-bold"
                   style={{
-                    background: 'linear-gradient(135deg, #06ffa5 0%, #3a86ff 100%)',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
                     fontFamily: 'Varien, sans-serif'
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push('/trade')}
                 >
-                  Accept Wager
+                  View More Wagers
                 </motion.button>
-              )}
-
-              <motion.button
-                className="w-full px-4 py-3 rounded-lg text-white font-bold"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  fontFamily: 'Varien, sans-serif'
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => router.push('/trade')}
-              >
-                View More Wagers
-              </motion.button>
+              </div>
             </motion.div>
           </div>
         </div>

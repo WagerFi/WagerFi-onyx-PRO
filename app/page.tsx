@@ -366,11 +366,11 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               />
 
-              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2" style={{ fontFamily: 'Varien, sans-serif' }}>
+              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2 pr-1" style={{ fontFamily: 'Varien, sans-serif' }}>
                 <span className="font-light text-white">WAGERFI</span>
                 <span className="w-0.5 h-6 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
-                  className="font-bold"
+                  className="font-bold pr-1"
                   style={{
                     background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #d4d4d4 100%)',
                     WebkitBackgroundClip: 'text',
@@ -383,7 +383,7 @@ export default function Home() {
                 </span>
               </span>
               <span 
-                className="relative z-10 bg-white text-[#2a2a2a] text-sm font-extrabold px-2 py-0.5 rounded-md"
+                className="relative z-10 bg-white text-[#2a2a2a] text-sm font-extrabold px-2 py-0.5 rounded-md mt-1"
               >
                 PRO
               </span>
@@ -420,7 +420,7 @@ export default function Home() {
                 <span className="font-light">WAGERFI</span>
                 <span className="w-0.5 h-16 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
-                  className="font-bold"
+                  className="font-bold pr-2"
                   style={{
                     background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #d4d4d4 100%)',
                     WebkitBackgroundClip: 'text',
@@ -458,7 +458,7 @@ export default function Home() {
                 </motion.span>
               </motion.span>
               <motion.span
-                className="bg-white text-[#2a2a2a] text-3xl font-black px-3 py-1 rounded-lg -mt-2"
+                className="bg-white text-[#2a2a2a] text-3xl font-black px-3 py-1 rounded-lg mt-2"
                 style={{ 
                   fontWeight: 900
                 }}
@@ -602,7 +602,8 @@ export default function Home() {
                 background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                fontFamily: 'Varien, sans-serif'
               }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -660,7 +661,7 @@ export default function Home() {
               onMouseLeave={() => setIsXHovered(false)}
             >
               <motion.button
-                className="relative w-9 h-9 flex items-center justify-center text-white text-base cursor-pointer select-none"
+                className="relative w-9 h-9 flex items-center justify-center text-white cursor-pointer select-none"
                 style={{ 
                   borderRadius: '10px',
                   background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(30, 30, 30, 0.95))',
@@ -693,7 +694,9 @@ export default function Home() {
                   }}
                   transition={{ duration: 0.2 }}
                 />
-                <span className="relative z-10">𝕏</span>
+                <svg className="relative z-10 w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
               </motion.button>
             </motion.div>
 

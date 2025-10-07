@@ -666,10 +666,20 @@ export const WagerMarketCard = memo(WagerMarketCardComponent, (prevProps, nextPr
   // Compare status (most important field that changes)
   if (prevProps.wager.status !== nextProps.wager.status) return false;
   
+  // Compare acceptor (changes when wager is accepted)
+  if (prevProps.wager.acceptor_address !== nextProps.wager.acceptor_address) return false;
+  
+  // Compare winner fields
+  if (prevProps.wager.winner_id !== nextProps.wager.winner_id) return false;
+  if (prevProps.wager.winner_position !== nextProps.wager.winner_position) return false;
+  
   // For crypto wagers, compare resolution_price
   if (isCryptoWager(prevProps.wager) && isCryptoWager(nextProps.wager)) {
     if (prevProps.wager.resolution_price !== nextProps.wager.resolution_price) return false;
   }
+  
+  // Compare updated_at to catch any other changes
+  if (prevProps.wager.updated_at !== nextProps.wager.updated_at) return false;
   
   // If we got here, props are essentially the same - skip render
   return true;

@@ -9,9 +9,10 @@ export function useOrderBook(tokenId: string | null) {
     const [orderBook, setOrderBook] = useState<OrderBookSummary | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasOrderBook, setHasOrderBook] = useState(true); // Track if token has orderbook data
 
     const fetchOrderBook = useCallback(async () => {
-        if (!tokenId) return;
+        if (!tokenId || !hasOrderBook) return;
 
         setLoading(true);
         setError(null);
@@ -20,15 +21,23 @@ export function useOrderBook(tokenId: string | null) {
             const data = await clobClient.getOrderBook(tokenId);
             setOrderBook(data);
         } catch (err: any) {
-            console.error('Error fetching order book:', err);
-            setError(err.message || 'Failed to fetch order book');
+            // 404 errors are expected for tokens without orderbook data
+            if (err.response?.status === 404) {
+                setHasOrderBook(false); // Stop trying to fetch this token
+            } else {
+                console.error('Error fetching order book:', err);
+                setError(err.message || 'Failed to fetch order book');
+            }
         } finally {
             setLoading(false);
         }
-    }, [tokenId]);
+    }, [tokenId, hasOrderBook]);
 
     useEffect(() => {
         if (!tokenId) return;
+
+        // Reset hasOrderBook flag for new tokens
+        setHasOrderBook(true);
 
         // Initial fetch
         fetchOrderBook();

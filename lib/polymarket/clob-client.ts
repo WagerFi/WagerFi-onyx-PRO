@@ -305,7 +305,10 @@ export class ClobClient {
 
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error checking allowances:', error?.response?.data || error?.message);
+            // Only log if it's not the "no address" error (expected when wallet not connected)
+            if (error.message !== 'No address provided and no signer set') {
+                console.error('❌ Error checking allowances:', error?.response?.data || error?.message);
+            }
             throw new Error(error?.response?.data?.error || error.message || 'Failed to check allowances');
         }
     }

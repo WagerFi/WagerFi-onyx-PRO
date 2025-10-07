@@ -29,7 +29,7 @@ export function CompactUserStats({ className = '' }: CompactUserStatsProps) {
         className="flex items-center gap-1 px-2 py-1 rounded shadow-lg" 
         title="$WAGER Balance"
         style={{
-          background: 'rgba(0, 0, 0, 0.95)',
+          background: 'rgba(30, 30, 30, 1)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -47,7 +47,7 @@ export function CompactUserStats({ className = '' }: CompactUserStatsProps) {
         className="flex items-center gap-1 px-2 py-1 rounded shadow-lg" 
         title="SOL Balance"
         style={{
-          background: 'rgba(0, 0, 0, 0.95)',
+          background: 'rgba(30, 30, 30, 1)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',

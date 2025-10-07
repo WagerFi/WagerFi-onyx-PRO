@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Varien Font Family */
+/* Inter Font Family - Main App Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Varien Font Family - For Branding Only */
 @font-face {
     font-family: 'Varien';
     src: url('/fonts/varien/WOFF/Varien.woff2') format('woff2'),
@@ -23,7 +26,7 @@
     text-rendering: optimizeLegibility;
 }
 
-/* Varien Outline Font Family */
+/* Varien Outline Font Family - For Branding Only */
 @font-face {
     font-family: 'Varien Outline';
     src: url('/fonts/varien/WOFF/Varien Outline.woff2') format('woff2'),
@@ -44,7 +47,7 @@
     text-rendering: optimizeLegibility;
 }
 
-/* JetBrains Mono Font */
+/* JetBrains Mono Font - For Code */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
 * {
@@ -76,9 +79,7 @@
 
 body {
     color: hsl(0, 0%, 100%);
-    font-family: 'Varien', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

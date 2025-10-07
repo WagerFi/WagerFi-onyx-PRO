@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { clobClient } from '@/lib/polymarket/clob-client';
 import type { Market, Token } from '@/lib/polymarket/types';
+import { useWallet } from '@/lib/hooks/useWallet';
 
 interface TradePanelProps {
   market: Market | null;
@@ -12,6 +13,7 @@ interface TradePanelProps {
 }
 
 export function TradePanel({ market, isConnected, onConnect }: TradePanelProps) {
+  const { walletAddress } = useWallet();
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [price, setPrice] = useState('');
@@ -23,21 +25,27 @@ export function TradePanel({ market, isConnected, onConnect }: TradePanelProps) 
   const [checkingAllowance, setCheckingAllowance] = useState(false);
   const [allowanceInfo, setAllowanceInfo] = useState<any>(null);
 
-  // Check allowances when connected
+  // Check allowances when connected AND have wallet address
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && walletAddress) {
       checkAllowances();
     }
-  }, [isConnected]);
+  }, [isConnected, walletAddress]);
 
   const checkAllowances = async () => {
+    // Don't check if no wallet address
+    if (!walletAddress) return;
+    
     setCheckingAllowance(true);
     try {
       const info = await clobClient.checkAllowances();
       setAllowanceInfo(info);
       console.log('💰 Allowance info:', info);
-    } catch (err) {
-      console.error('Error checking allowances:', err);
+    } catch (err: any) {
+      // Silently fail if it's the expected "no address" error
+      if (err?.message !== 'No address provided and no signer set') {
+        console.error('Error checking allowances:', err);
+      }
     } finally {
       setCheckingAllowance(false);
     }

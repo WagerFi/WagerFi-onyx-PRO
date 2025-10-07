@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import globalWebSocketManager from '@/lib/hooks/useGlobalWebSocket';
 
 export interface Token {
   id: number | string;
@@ -31,6 +32,7 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [priceAnimations, setPriceAnimations] = useState<Map<number | string, {isAnimating: boolean; isUp: boolean}>>(new Map());
 
   // Fetch tokens from background worker via API proxy
   const fetchTokens = async () => {
@@ -97,10 +99,73 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
   useEffect(() => {
     fetchTokens();
     
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 30 seconds (as backup)
     const interval = setInterval(fetchTokens, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Subscribe to WebSocket for real-time price updates
+  useEffect(() => {
+    if (tokens.length === 0) return;
+
+    const unsubscribeFunctions: (() => void)[] = [];
+
+    // Subscribe to each token for live price updates
+    tokens.forEach((token) => {
+      const tokenId = token.coingecko_id || token.slug || String(token.id);
+      
+      const unsubscribe = globalWebSocketManager.subscribe(tokenId, (update) => {
+        setTokens((prevTokens) =>
+          prevTokens.map((t) => {
+            const tId = t.coingecko_id || t.slug || String(t.id);
+            if (tId === tokenId) {
+              const oldPrice = t.quote.USD.price;
+              const newPrice = update.price;
+              
+              // Trigger price animation
+              if (oldPrice > 0 && newPrice !== oldPrice) {
+                setPriceAnimations((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.set(t.id, {
+                    isAnimating: true,
+                    isUp: newPrice > oldPrice
+                  });
+                  return newMap;
+                });
+                
+                // Clear animation after 500ms
+        setTimeout(() => {
+                  setPriceAnimations((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(t.id);
+                    return newMap;
+                  });
+        }, 500);
+      }
+      
+              return {
+                ...t,
+            quote: {
+              USD: {
+                    ...t.quote.USD,
+                    price: newPrice
+                  }
+                }
+              };
+            }
+            return t;
+          })
+        );
+      });
+      
+      unsubscribeFunctions.push(unsubscribe);
+    });
+
+    // Cleanup: Unsubscribe from all tokens when component unmounts or tokens change
+    return () => {
+      unsubscribeFunctions.forEach(unsub => unsub());
+    };
+  }, [tokens.length]); // Only re-subscribe when token count changes (not on every price update)
 
   const filteredTokens = tokens.filter(token =>
     token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,7 +186,7 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
     return `$${marketCap.toLocaleString()}`;
   };
 
-      return (
+  return (
     <div className="flex flex-col h-full" style={{ fontFamily: 'Varien, sans-serif' }}>
       {/* Search Bar */}
       <div className="p-4 border-b border-gray-200">
@@ -174,6 +239,7 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
               ) : (
           filteredTokens.map((token) => {
             const isPositive = token.quote.USD.percent_change_24h >= 0;
+            const priceAnimation = priceAnimations.get(token.id);
                   return (
                   <div 
                 key={token.id}
@@ -196,7 +262,15 @@ export function TopCryptoTokensPanel({ onCreateWager, onWagerCreated }: TopCrypt
                                </div>
                             </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-800">{formatPrice(token.quote.USD.price)}</div>
+                    <div className={`font-bold transition-all duration-500 ${
+                      priceAnimation?.isAnimating
+                        ? priceAnimation.isUp
+                          ? 'text-green-600 scale-110'
+                          : 'text-red-600 scale-110'
+                        : 'text-gray-800'
+                    }`}>
+                      {formatPrice(token.quote.USD.price)}
+                    </div>
                     <div className={`flex items-center gap-1 text-sm font-medium ${
                       isPositive ? 'text-green-600' : 'text-red-600'
                     }`}>
