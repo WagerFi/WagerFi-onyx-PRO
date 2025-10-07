@@ -205,7 +205,6 @@ export default function TradePage() {
   const router = useRouter();
   const [isNavHovered, setIsNavHovered] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
-  const [viewMode, setViewMode] = useState<'trending' | 'profitable' | 'all' | 'crypto' | 'sports'>('trending');
   const [tradeMode, setTradeMode] = useState<'single' | 'batch'>('single');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
@@ -279,6 +278,9 @@ export default function TradePage() {
     w.team1?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     w.team2?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Debug logging
+  console.log(`🎯 Wager counts - Crypto: ${cryptoWagers.length}, Sports: ${sportsWagers.length}, Filtered Crypto: ${filteredCryptoWagers.length}, Filtered Sports: ${filteredSportsWagers.length}`);
 
   // Calculate if we have any content to display
   const hasContent =
@@ -356,7 +358,7 @@ export default function TradePage() {
               acceptor_profile: null
             };
             
-            if (viewMode === 'crypto') {
+            if (marketType === 'crypto') {
               setCryptoWagers(prev => [wagerWithProfile, ...prev]);
             } else {
               setSportsWagers(prev => [wagerWithProfile, ...prev]);
@@ -382,7 +384,7 @@ export default function TradePage() {
                 : w
             );
             
-            if (viewMode === 'crypto') {
+            if (marketType === 'crypto') {
               setCryptoWagers(updateWager);
             } else {
               setSportsWagers(updateWager);
@@ -391,7 +393,7 @@ export default function TradePage() {
             // Wager deleted - remove from list
             const deletedId = (payload.old as any).id;
             
-            if (viewMode === 'crypto') {
+            if (marketType === 'crypto') {
               setCryptoWagers(prev => prev.filter(w => w.id !== deletedId));
             } else {
               setSportsWagers(prev => prev.filter(w => w.id !== deletedId));
@@ -405,7 +407,7 @@ export default function TradePage() {
       console.log(`🔌 Cleaning up real-time subscription for ${tableName}`);
       subscription.unsubscribe();
     };
-  }, [viewMode]);
+  }, [marketType]);
 
   // Infinite scroll handler with throttle
   const handleScroll = () => {
@@ -439,7 +441,9 @@ export default function TradePage() {
   async function fetchWagers() {
     setWagersLoading(true);
     
-    const tableName = viewMode === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
+    const tableName = marketType === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
+    console.log(`🔍 Fetching wagers from ${tableName} for marketType: ${marketType}`);
+    
     let query = supabase
       .from(tableName)
       .select('*');
@@ -456,7 +460,7 @@ export default function TradePage() {
 
     // Apply search filter
     if (debouncedSearchQuery.trim()) {
-      if (viewMode === 'crypto') {
+      if (marketType === 'crypto') {
         query = query.ilike('token_symbol', `%${debouncedSearchQuery}%`);
       } else {
         query = query.or(`team1.ilike.%${debouncedSearchQuery}%,team2.ilike.%${debouncedSearchQuery}%`);
@@ -471,7 +475,9 @@ export default function TradePage() {
       .order('created_at', { ascending: false })
       .limit(500); // Increased limit for infinite scroll
 
-    const { data } = await query;
+    const { data, error } = await query;
+    
+    console.log(`📊 Query result for ${tableName}:`, { data, error, count: data?.length || 0 });
     
     if (data) {
       // Fetch user profiles for all wager participants (same as WagerFi)
@@ -506,7 +512,7 @@ export default function TradePage() {
         acceptor_profile: profilesMap[wager.acceptor_address] || null,
       }));
       
-      if (viewMode === 'crypto') {
+      if (marketType === 'crypto') {
         setCryptoWagers(wagersWithProfiles as CryptoWager[]);
       } else {
         setSportsWagers(wagersWithProfiles as SportsWager[]);
@@ -516,14 +522,11 @@ export default function TradePage() {
     setWagersLoading(false);
   }
 
-  // Get full list based on view mode
-  const fullMarkets = 
-    viewMode === 'trending' ? trending :
-    viewMode === 'profitable' ? profitable :
-    markets;
+  // Get full list based on market type
+  const fullMarkets = markets; // Always use all markets since we filter by marketType
   
-  const fullWagers = viewMode === 'crypto' ? cryptoWagers : sportsWagers;
-  const isWagerMode = viewMode === 'crypto' || viewMode === 'sports';
+  const fullWagers = marketType === 'crypto' ? cryptoWagers : sportsWagers;
+  const isWagerMode = marketType === 'crypto' || marketType === 'sports';
   const loading = isWagerMode ? wagersLoading : marketsLoading;
 
   // Slice to displayed count for infinite scroll
@@ -543,9 +546,9 @@ export default function TradePage() {
       return;
     }
     
-    if (viewMode === 'crypto') {
+    if (marketType === 'crypto') {
       setIsTokensModalOpen(true);
-    } else if (viewMode === 'sports') {
+    } else if (marketType === 'sports') {
       setIsGamesModalOpen(true);
     }
   };
