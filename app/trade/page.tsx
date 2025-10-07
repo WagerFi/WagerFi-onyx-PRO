@@ -326,28 +326,32 @@ export default function TradePage() {
     const fetchAllWagers = async () => {
       console.log('🚀 Starting initial wager fetch...');
       
-      // Fetch crypto wagers
-      const { data: cryptoData, error: cryptoError } = await supabase
+      // Fetch crypto wagers with proper filtering (like main WagerFi app)
+      let cryptoQuery = supabase
         .from('crypto_wagers')
         .select('*')
         .neq('status', 'cancelled')
+        .neq('status', 'expired')
         .order('created_at', { ascending: false })
         .limit(500);
 
+      const { data: cryptoData, error: cryptoError } = await cryptoQuery;
       console.log('📊 Crypto wagers fetched:', { data: cryptoData, error: cryptoError, count: cryptoData?.length || 0 });
 
       if (cryptoData) {
         setCryptoWagers(cryptoData as any[]);
       }
 
-      // Fetch sports wagers
-      const { data: sportsData, error: sportsError } = await supabase
+      // Fetch sports wagers with proper filtering (like main WagerFi app)
+      let sportsQuery = supabase
         .from('sports_wagers')
         .select('*')
         .neq('status', 'cancelled')
+        .neq('status', 'expired')
         .order('created_at', { ascending: false })
         .limit(500);
 
+      const { data: sportsData, error: sportsError } = await sportsQuery;
       console.log('📊 Sports wagers fetched:', { data: sportsData, error: sportsError, count: sportsData?.length || 0 });
 
       if (sportsData) {
@@ -466,74 +470,48 @@ export default function TradePage() {
       .from(tableName)
       .select('*');
 
-    // Apply status filter
+    // Apply status filter (matching main WagerFi app logic)
     if (wagerFilter === 'open') {
       query = query.eq('status', 'open');
     } else if (wagerFilter === 'live') {
-      query = query.in('status', ['live', 'active', 'matched']);
+      if (marketType === 'crypto') {
+        query = query.eq('status', 'active'); // Crypto uses 'active' for live
+      } else {
+        query = query.eq('status', 'live'); // Sports uses 'live'
+      }
     } else if (wagerFilter === 'settled') {
-      query = query.in('status', ['resolved', 'settled']);
+      query = query.in('status', ['resolved', 'settled', 'expired']);
     }
-    // 'all' = no status filter
+    // 'all' = no status filter but still exclude cancelled
+
+    // Always exclude cancelled wagers (like main WagerFi app)
+    query = query.neq('status', 'cancelled');
 
     // Apply search filter
     if (debouncedSearchQuery.trim()) {
       if (marketType === 'crypto') {
+        // Search in token_symbol for crypto wagers
         query = query.ilike('token_symbol', `%${debouncedSearchQuery}%`);
       } else {
+        // Search in team names for sports wagers (need to check actual field names)
         query = query.or(`team1.ilike.%${debouncedSearchQuery}%,team2.ilike.%${debouncedSearchQuery}%`);
       }
     }
 
-    // Exclude cancelled wagers
-    query = query.neq('status', 'cancelled');
-
-    // Order and fetch all (for infinite scroll)
+    // Order and fetch
     query = query
       .order('created_at', { ascending: false })
-      .limit(500); // Increased limit for infinite scroll
+      .limit(500);
 
     const { data, error } = await query;
     
     console.log(`📊 Query result for ${tableName}:`, { data, error, count: data?.length || 0 });
     
     if (data) {
-      // Fetch user profiles for all wager participants (same as WagerFi)
-      const allAddresses: string[] = [];
-      data.forEach((wager: any) => {
-        if (wager.creator_address) allAddresses.push(wager.creator_address);
-        if (wager.acceptor_address) allAddresses.push(wager.acceptor_address);
-      });
-      
-      // Remove duplicates
-      const uniqueAddresses = [...new Set(allAddresses.filter(addr => addr))];
-      
-      // Fetch profiles
-      const profilesMap: Record<string, { username: string; profile_image_url: string } | null> = {};
-      if (uniqueAddresses.length > 0) {
-        const { data: profiles } = await supabase
-          .from('users')
-          .select('wallet_address, username, profile_image_url')
-          .in('wallet_address', uniqueAddresses);
-        
-        if (profiles) {
-          profiles.forEach((profile: any) => {
-            profilesMap[profile.wallet_address] = profile;
-          });
-        }
-      }
-      
-      // Attach profiles to wagers
-      const wagersWithProfiles = data.map((wager: any) => ({
-        ...wager,
-        creator_profile: profilesMap[wager.creator_address] || null,
-        acceptor_profile: profilesMap[wager.acceptor_address] || null,
-      }));
-      
       if (marketType === 'crypto') {
-        setCryptoWagers(wagersWithProfiles as CryptoWager[]);
+        setCryptoWagers(data as CryptoWager[]);
       } else {
-        setSportsWagers(wagersWithProfiles as SportsWager[]);
+        setSportsWagers(data as SportsWager[]);
       }
     }
     
