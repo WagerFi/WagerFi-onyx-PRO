@@ -297,7 +297,7 @@ export default function TradePage() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
-  }, [viewMode, wagerFilter, debouncedSearchQuery]);
+  }, [marketType, wagerFilter, debouncedSearchQuery]);
 
   // Debounce search query and trigger Polymarket API search
   useEffect(() => {
@@ -314,16 +314,16 @@ export default function TradePage() {
 
   // Fetch wagers on mount and filter changes
   useEffect(() => {
-    if (viewMode === 'crypto' || viewMode === 'sports') {
+    if (marketType === 'crypto' || marketType === 'sports') {
       fetchWagers();
     }
-  }, [viewMode, wagerFilter, debouncedSearchQuery]);
+  }, [marketType, wagerFilter, debouncedSearchQuery]);
 
   // Real-time subscription for wager updates
   useEffect(() => {
-    if (viewMode !== 'crypto' && viewMode !== 'sports') return;
+    if (marketType !== 'crypto' && marketType !== 'sports') return;
 
-    const tableName = viewMode === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
+    const tableName = marketType === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
     
     console.log(`📡 Setting up real-time subscription for ${tableName}`);
     
