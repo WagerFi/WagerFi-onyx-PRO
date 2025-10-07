@@ -321,93 +321,111 @@ export default function TradePage() {
     }
   }, [marketType, wagerFilter, debouncedSearchQuery]);
 
-  // Real-time subscription for wager updates
+  // Initial fetch of all wagers on component mount
   useEffect(() => {
-    if (marketType !== 'crypto' && marketType !== 'sports') return;
+    const fetchAllWagers = async () => {
+      console.log('🚀 Starting initial wager fetch...');
+      
+      // Fetch crypto wagers
+      const { data: cryptoData, error: cryptoError } = await supabase
+        .from('crypto_wagers')
+        .select('*')
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-    const tableName = marketType === 'crypto' ? 'crypto_wagers' : 'sports_wagers';
-    
-    console.log(`📡 Setting up real-time subscription for ${tableName}`);
-    
-    const subscription = supabase
-      .channel(`${tableName}-changes`)
+      console.log('📊 Crypto wagers fetched:', { data: cryptoData, error: cryptoError, count: cryptoData?.length || 0 });
+
+      if (cryptoData) {
+        setCryptoWagers(cryptoData as any[]);
+      }
+
+      // Fetch sports wagers
+      const { data: sportsData, error: sportsError } = await supabase
+        .from('sports_wagers')
+        .select('*')
+        .neq('status', 'cancelled')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      console.log('📊 Sports wagers fetched:', { data: sportsData, error: sportsError, count: sportsData?.length || 0 });
+
+      if (sportsData) {
+        setSportsWagers(sportsData as any[]);
+      }
+
+      console.log(`🚀 Initial wager fetch complete - Crypto: ${cryptoData?.length || 0}, Sports: ${sportsData?.length || 0}`);
+    };
+
+    fetchAllWagers();
+  }, []); // Run only once on mount
+
+  // Real-time subscription for ALL wager updates (always active)
+  useEffect(() => {
+    // Set up real-time subscriptions for both crypto and sports wagers
+    const cryptoSubscription = supabase
+      .channel('crypto-wagers-changes')
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
-          table: tableName
+          table: 'crypto_wagers'
         },
         async (payload) => {
-          console.log(`🔄 Real-time update received:`, payload);
+          console.log('🔄 Crypto wager real-time update:', payload);
           
           if (payload.eventType === 'INSERT') {
-            // New wager created - fetch profile and add to list
             const newWager = payload.new as any;
-            
-            // Fetch creator profile
-            const { data: creatorProfile } = await supabase
-              .from('users')
-              .select('wallet_address, username, profile_image_url')
-              .eq('wallet_address', newWager.creator_address)
-              .single();
-            
-            const wagerWithProfile = {
-              ...newWager,
-              creator_profile: creatorProfile,
-              acceptor_profile: null
-            };
-            
-            if (marketType === 'crypto') {
-              setCryptoWagers(prev => [wagerWithProfile, ...prev]);
-            } else {
-              setSportsWagers(prev => [wagerWithProfile, ...prev]);
-            }
+            setCryptoWagers(prev => [newWager, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            // Wager updated - update in place
             const updatedWager = payload.new as any;
-            
-            // Fetch profiles if acceptor was added
-            let acceptorProfile = null;
-            if (updatedWager.acceptor_address) {
-              const { data } = await supabase
-                .from('users')
-                .select('wallet_address, username, profile_image_url')
-                .eq('wallet_address', updatedWager.acceptor_address)
-                .single();
-              acceptorProfile = data;
-            }
-            
-            const updateWager = (prev: any[]) => prev.map(w => 
-              w.id === updatedWager.id 
-                ? { ...updatedWager, creator_profile: w.creator_profile, acceptor_profile: acceptorProfile || w.acceptor_profile }
-                : w
-            );
-            
-            if (marketType === 'crypto') {
-              setCryptoWagers(updateWager);
-            } else {
-              setSportsWagers(updateWager);
-            }
+            setCryptoWagers(prev => prev.map(w => 
+              w.id === updatedWager.id ? updatedWager : w
+            ));
           } else if (payload.eventType === 'DELETE') {
-            // Wager deleted - remove from list
             const deletedId = (payload.old as any).id;
-            
-            if (marketType === 'crypto') {
-              setCryptoWagers(prev => prev.filter(w => w.id !== deletedId));
-            } else {
-              setSportsWagers(prev => prev.filter(w => w.id !== deletedId));
-            }
+            setCryptoWagers(prev => prev.filter(w => w.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    const sportsSubscription = supabase
+      .channel('sports-wagers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sports_wagers'
+        },
+        async (payload) => {
+          console.log('🔄 Sports wager real-time update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newWager = payload.new as any;
+            setSportsWagers(prev => [newWager, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedWager = payload.new as any;
+            setSportsWagers(prev => prev.map(w => 
+              w.id === updatedWager.id ? updatedWager : w
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any).id;
+            setSportsWagers(prev => prev.filter(w => w.id !== deletedId));
           }
         }
       )
       .subscribe();
 
     return () => {
-      console.log(`🔌 Cleaning up real-time subscription for ${tableName}`);
-      subscription.unsubscribe();
+      console.log('🔌 Cleaning up wager real-time subscriptions');
+      cryptoSubscription.unsubscribe();
+      sportsSubscription.unsubscribe();
     };
-  }, [marketType]);
+  }, []); // Always active, no dependencies
+
 
   // Infinite scroll handler with throttle
   const handleScroll = () => {
