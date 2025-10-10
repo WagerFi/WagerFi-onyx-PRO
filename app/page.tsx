@@ -366,7 +366,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               />
 
-              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2 pr-1" style={{ fontFamily: 'Varien, sans-serif' }}>
+              <span className="relative z-10 text-xl tracking-tight select-none uppercase mt-0.5 flex items-center gap-2 pr-1" style={{ fontFamily: 'Geist, sans-serif' }}>
                 <span className="font-light text-white">WAGERFI</span>
                 <span className="w-0.5 h-6 bg-gradient-to-b from-transparent via-white/30 to-transparent"></span>
                 <span 
@@ -603,7 +603,7 @@ export default function Home() {
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
-                fontFamily: 'Varien, sans-serif'
+                fontFamily: 'Geist, sans-serif'
               }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

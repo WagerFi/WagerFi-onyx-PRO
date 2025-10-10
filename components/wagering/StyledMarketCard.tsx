@@ -114,22 +114,52 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
     (outcomes.some(o => o?.toLowerCase() === 'yes') && outcomes.some(o => o?.toLowerCase() === 'no'));
   const isMultiOutcome = outcomes.length > 2;
 
-  // Log ALL market data for the first market to see everything Polymarket sends
-  if (typeof window !== 'undefined' && index === 0) {
-    console.log('📦 COMPLETE RAW MARKET DATA (first market):', {
-      ...market,
-      parsedOutcomes: outcomes,
-      parsedPrices: prices,
-      calculatedFields: {
-        totalVolume: formattedVolume,
-        volume24hr: formattedVolume24hr,
-        liquidity: formattedLiquidity,
-        endDate: formattedEndDate,
-        isMultiOutcome,
-        outcomeCount: outcomes.length
-      }
-    });
-  }
+  // Smart category detection based on question content and slug
+  const detectCategory = (question: string, slug: string = ''): string => {
+    const q = question.toLowerCase();
+    const s = slug.toLowerCase();
+    
+    // Sports keywords (check both question and slug)
+    if ((q.includes('win') && (q.includes('vs') || q.includes('match') || q.includes('game') || q.includes('fc') || q.includes('draw'))) ||
+        (s.includes('vs') || s.includes('match') || s.includes('game') || s.includes('draw') || s.includes('sport'))) {
+      return 'Sports';
+    }
+    
+    // Crypto keywords (enhanced detection)
+    if ((q.includes('price of') && (q.includes('bitcoin') || q.includes('ethereum') || q.includes('solana') || q.includes('xrp') || q.includes('btc') || q.includes('eth') || q.includes('sol') || q.includes('crypto'))) ||
+        (s.includes('bitcoin') || s.includes('ethereum') || s.includes('solana') || s.includes('crypto') || s.includes('btc') || s.includes('eth'))) {
+      return 'Crypto';
+    }
+    
+    // Politics keywords (enhanced)
+    if (q.includes('election') || q.includes('president') || q.includes('nato') || q.includes('ukraine') || q.includes('israel') || q.includes('ceasefire') || q.includes('vote') || q.includes('political') ||
+        s.includes('election') || s.includes('president') || s.includes('nato') || s.includes('ukraine') || s.includes('politics')) {
+      return 'Politics';
+    }
+    
+    // Entertainment keywords
+    if (q.includes('mrbeast') || q.includes('video') || q.includes('views') || q.includes('movie') || q.includes('oscar') || q.includes('netflix') ||
+        s.includes('mrbeast') || s.includes('video') || s.includes('movie') || s.includes('entertainment')) {
+      return 'Entertainment';
+    }
+    
+    // Business/Finance keywords
+    if (q.includes('fed') || q.includes('rate') || q.includes('recession') || q.includes('stock') || q.includes('market') || q.includes('economy') ||
+        s.includes('fed') || s.includes('rate') || s.includes('recession') || s.includes('stock') || s.includes('finance')) {
+      return 'Finance';
+    }
+    
+    // Technology keywords
+    if (q.includes('ai') || q.includes('tech') || q.includes('apple') || q.includes('google') || q.includes('tesla') ||
+        s.includes('tech') || s.includes('apple') || s.includes('google') || s.includes('tesla') || s.includes('ai')) {
+      return 'Technology';
+    }
+    
+    // Default fallback
+    return 'Prediction';
+  };
+  
+  const smartCategory = detectCategory(market.question || market.title || '', market.slug || '');
 
   // Calculate potential payout
   const calculatePayout = (amount: number, probability: number) => {
@@ -168,7 +198,7 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
             left: '-1px',
             right: '-1px',
             bottom: '-1px',
-            borderRadius: '12px',
+            borderRadius: '16px',
             padding: '1.5px',
             background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -182,10 +212,12 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
       ) : null}
 
       <div
-        className={`relative rounded-xl flex flex-col ${isYesNo ? '' : 'overflow-hidden'}`}
+        className="relative flex flex-col"
         style={{
           background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '16px',
+          overflow: 'hidden',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           minHeight: isYesNo ? 'auto' : '200px',
@@ -210,7 +242,7 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
               left: '-1px',
               right: '-1px',
               bottom: '-1px',
-              borderRadius: '12px',
+              borderRadius: '16px',
               padding: '1.5px',
               background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
               WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -274,9 +306,12 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-lg">
-                {market.category === 'Politics' ? '🗳️' : 
-                 market.category === 'Sports' ? '⚽' :
-                 market.category === 'Crypto' ? '₿' : '📊'}
+                {smartCategory === 'Politics' ? '🗳️' : 
+                 smartCategory === 'Sports' ? '⚽' :
+                 smartCategory === 'Crypto' ? '₿' :
+                 smartCategory === 'Entertainment' ? '🎬' :
+                 smartCategory === 'Finance' ? '💰' :
+                 smartCategory === 'Technology' ? '💻' : '📊'}
               </div>
             )}
           </div>
@@ -284,7 +319,7 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
           {/* Title and Category */}
           <div className="flex-1 min-w-0">
             <div className="text-[10px] text-gray-400 mb-0.5 uppercase tracking-wide">
-              {market.category || 'Politics'}
+              {smartCategory}
             </div>
             <h3 className="text-xs font-medium text-white leading-tight" style={{ 
               height: '2.4em', // Exactly 2 lines height
@@ -389,9 +424,17 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
                 value={betAmount}
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer slider-iridescent"
                 style={{
-                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((betAmount - 1) / 99) * 100}%, rgba(255,255,255,0.1) ${((betAmount - 1) / 99) * 100}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(to right, 
+                    #ff006e 0%, 
+                    #fb5607 ${((betAmount - 1) / 99) * 20}%, 
+                    #ffbe0b ${((betAmount - 1) / 99) * 40}%, 
+                    #8338ec ${((betAmount - 1) / 99) * 60}%, 
+                    #3a86ff ${((betAmount - 1) / 99) * 80}%, 
+                    #06ffa5 ${((betAmount - 1) / 99) * 100}%, 
+                    rgba(255,255,255,0.1) ${((betAmount - 1) / 99) * 100}%, 
+                    rgba(255,255,255,0.1) 100%)`
                 }}
               />
 
@@ -419,7 +462,7 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
                 <div className="text-base">
                   Buy {selectedOutcome.side === 'yes' ? 'Yes' : 'No'}
                 </div>
-                <div className="text-[10px] opacity-90">
+                <div className="text-sm font-bold opacity-95">
                   To win ${calculatePayout(betAmount, prices[selectedOutcome.index] || 0.5)}
                 </div>
               </button>
@@ -622,47 +665,64 @@ export function StyledMarketCard({ market, index, onClick }: StyledMarketCardPro
         }
 
         /* Custom Slider Styling */
-        .slider::-webkit-slider-thumb {
+        .slider-iridescent {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 6px;
+          border-radius: 3px;
+          outline: none;
+        }
+
+        .slider-iridescent::-webkit-slider-thumb {
+          -webkit-appearance: none;
           appearance: none;
           width: 18px;
           height: 18px;
           border-radius: 50%;
-          background: white;
+          background: #ffffff;
           cursor: pointer;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.9);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
+          margin-top: -6px; /* Centers the thumb on the track */
         }
 
-        .slider::-webkit-slider-thumb:hover {
+        .slider-iridescent::-webkit-slider-thumb:hover {
           transform: scale(1.1);
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          border: 2px solid rgba(255, 255, 255, 1);
         }
 
-        .slider::-moz-range-thumb {
+        .slider-iridescent::-moz-range-thumb {
           width: 18px;
           height: 18px;
           border-radius: 50%;
-          background: white;
+          background: #ffffff;
           cursor: pointer;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.9);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
+          -moz-appearance: none;
+          appearance: none;
         }
 
-        .slider::-moz-range-thumb:hover {
+        .slider-iridescent::-moz-range-thumb:hover {
           transform: scale(1.1);
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+          border: 2px solid rgba(255, 255, 255, 1);
         }
 
-        .slider::-webkit-slider-runnable-track {
-          height: 8px;
-          border-radius: 4px;
+        .slider-iridescent::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 3px;
           background: rgba(255, 255, 255, 0.1);
         }
 
-        .slider::-moz-range-track {
-          height: 8px;
-          border-radius: 4px;
+        .slider-iridescent::-moz-range-track {
+          height: 6px;
+          border-radius: 3px;
           background: rgba(255, 255, 255, 0.1);
+          border: none;
         }
       `}</style>
     </motion.div>

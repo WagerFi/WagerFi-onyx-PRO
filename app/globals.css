@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Inter Font Family - Main App Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Geist Font Family - Main App Font (Vercel's Modern Typeface) */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
 
 /* Varien Font Family - For Branding Only */
 @font-face {
@@ -79,7 +79,8 @@
 
 body {
     color: hsl(0, 0%, 100%);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+    text-transform: uppercase;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -87,6 +88,29 @@ body {
 @layer utilities {
     .text-balance {
         text-wrap: balance;
+    }
+
+    /* Ensure all text is uppercase */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    div,
+    button,
+    a,
+    label,
+    input,
+    textarea {
+        text-transform: uppercase;
+    }
+
+    /* Override for specific cases where we don't want uppercase */
+    .text-normal-case {
+        text-transform: none !important;
     }
 }
 
@@ -212,7 +236,7 @@ body {
 }
 
 .card__title {
-    font-family: 'Varien', sans-serif;
+    font-family: 'Geist', sans-serif;
     width: 75%;
 }
 

@@ -148,7 +148,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
             left: '-1px',
             right: '-1px',
             bottom: '-1px',
-            borderRadius: '12px',
+            borderRadius: '16px',
             padding: '1.5px',
             background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -405,7 +405,7 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
           left: '-1px',
           right: '-1px',
           bottom: '-1px',
-          borderRadius: '12px',
+          borderRadius: '16px',
           padding: '1.5px',
           background: `radial-gradient(180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ff006e 0%, #fb5607 8%, #ffbe0b 16%, #8338ec 24%, #3a86ff 32%, #06ffa5 40%, transparent 50%)`,
           WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -418,11 +418,13 @@ export function WagerCard({ wager, onAccept, onView, userWalletAddress, index = 
       />
 
       <div
-        className="relative p-6 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+        className="relative p-6 cursor-pointer flex flex-col"
         onClick={() => onView?.(wager.id)}
         style={{
           background: 'linear-gradient(135deg, rgba(30, 30, 35, 0.7), rgba(20, 20, 25, 0.7))',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '16px',
+          overflow: 'hidden',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           minHeight: '200px',
